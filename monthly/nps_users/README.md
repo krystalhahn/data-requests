@@ -8,7 +8,7 @@ Output: `nps_users_[MMYY].csv`*
 ### 2. `nps_users_institutions.py`
 Run `write_nps_users_insts()` to get all OSFI affiliated user data
 
-Output: `nps_insts_[MMYY].csv`*
+Output: `nps_users_insts_[MMYY].csv`*
 
 ### 3. `merged_nps_users_insts.R`
 Use `merge_nps_users_insts()` to merge the outputs of #1 and #2 for the final `nps_users.csv` dataset
