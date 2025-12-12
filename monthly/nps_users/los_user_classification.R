@@ -1,5 +1,5 @@
-# Lifecycle Open Science (LOS) user classification
-# classify users as champion, active, emerging, or novice
+# Lifecycle Open Science (LOS) user classification and OSFI segmentation
+# classify users as champion, active, emerging, or novice (both overall and within OSFI users)
 
 library(readr)
 library(tidyverse)
@@ -23,15 +23,19 @@ classify_users <- function(nps_data_path, cutoff_date) {
         sum(los_project, los_registration, los_preprint) == 2 ~ "active",
         sum(los_project, los_registration, los_preprint) == 1 ~ "emerging",
         TRUE ~ "novice"
-      )
+      ),
+      is_institutional = !is.na(institutions) & institutions != ""
     ) %>%
     group_by(user_type) %>%
-    summarize(user_count = n())
+    summarise(
+      user_count = n(),
+      inst_user_count = sum(is_institutional, na.rm = TRUE)
+    )
   
   return(user_categories)
 }
 
 # example usage
 # update file paths below to match local file locations 
-user_categories_2025_02 <- classify_users("~/Desktop/nps_users_2025-03-07.csv", 
-                                          "2025-03-01")
+user_categories_2025_10 <- classify_users("~/Desktop/nps_users_2025-11-04.csv", 
+                                          "2025-11-01")
