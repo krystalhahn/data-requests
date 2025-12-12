@@ -1,5 +1,6 @@
 # Lifecycle Open Science (LOS) user classification and OSFI segmentation
 # classify users as champion, active, emerging, or novice (both overall and within OSFI users)
+# (account for different _created and _contributor columns in nps_users)
 
 library(readr)
 library(tidyverse)
@@ -14,9 +15,9 @@ classify_users <- function(nps_data_path, cutoff_date) {
   user_categories <- read_csv(nps_data_path) %>%
     subset(u.date_confirmed < cutoff_date) %>%
     rowwise() %>%
-    mutate(los_project = ifelse(public_projects > 0, T, F),
-           los_registration = ifelse(public_registrations > 0 | embargoed_registrations > 0, T, F),
-           los_preprint = ifelse(published_preprints > 0, T, F)) %>%
+    mutate(los_project = ifelse(public_projects_created > 0, T, F),
+           los_registration = ifelse(public_registrations_created > 0 | embargoed_registrations_created > 0, T, F),
+           los_preprint = ifelse(published_preprints_created > 0, T, F)) %>%
     mutate(
       user_type = case_when(
         sum(los_project, los_registration, los_preprint) == 3 ~ "champion",
