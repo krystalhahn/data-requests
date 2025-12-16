@@ -1,11 +1,15 @@
+# Total, not only for the quarter
 def get_regional_storage_metrics_for_insts(iids=None):
     import csv
     import io
+    from tqdm import tqdm
+
     filename = f'/tmp/regional_storage_metrics.csv'
     COL_HEADERS = ['institution.name', 'region.name', 'public_nodes', 'private_nodes', 'public_storage', 'private_storage']
     output = io.StringIO()
     writer = csv.DictWriter(output, COL_HEADERS)
     writer.writeheader()
+
     if not iids:
         target_insts = list(Institution.objects.all())
     elif isinstance(iids, str):
@@ -19,6 +23,9 @@ def get_regional_storage_metrics_for_insts(iids=None):
     else:
         print(f'Unable to parse iids {iids}')
         return
+    
+    pbar = tqdm(total=len(target_insts))
+
     for i in target_insts:
         for r in Region.objects.all():
             ns = i.nodes.filter(addons_osfstorage_node_settings__region=r).exclude(spam_status=2)
@@ -32,6 +39,11 @@ def get_regional_storage_metrics_for_insts(iids=None):
             }
             if domain_metrics.get('public_nodes', 0) or domain_metrics.get('private_nodes', 0):
                 writer.writerow(domain_metrics)
-                print(domain_metrics)
+        pbar.update(1)
+
+    pbar.close()
+
     with open(filename, 'w') as writeFile:
         writeFile.write(output.getvalue())
+
+    print(f"Output written to {filename}")
