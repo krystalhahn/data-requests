@@ -1,29 +1,35 @@
-def get_more_domain_metrics(ds=None, name='institutional', v=0):
+# Total, not only for the quarter
+def get_domain_metrics(ds=None):
     import csv
     import io
     from django.utils import timezone
     from tqdm import tqdm
-    import pytz
-    if not ds:
-        # unames = OSFUser.objects.filter(is_active=True).exclude(spam_status=2).values_list('username', flat=True)
-        unames = Email.objects.filter(user__is_active=True).exclude(user__spam_status=2).values_list('address', flat=True)
-        ds = set([u.split('@')[1] for u in unames if '@' in u])
-        name = 'all'
-    filename = f'/tmp/{name}_domain_metrics.csv'
+
+    filename = f'/tmp/all_domain_metrics.csv'
     COL_HEADERS = ['domain', 'total_users', 'orcid_total', 'annual_login', 'annual_actions', 'total_nodes', 'public_nodes', 'total_regs', 'public_regs', 'total_preprints', 'published_preprints']
     output = io.StringIO()
     writer = csv.DictWriter(output, COL_HEADERS)
     writer.writeheader()
+
+    if not ds:
+        # unames = OSFUser.objects.filter(is_active=True).exclude(spam_status=2).values_list('username', flat=True)
+        unames = Email.objects.filter(user__is_active=True).exclude(user__spam_status=2).values_list('address', flat=True)
+        ds = set([u.split('@')[1] for u in unames if '@' in u])
+
     target_date = timezone.now() - timezone.timedelta(days=365)
+
     pbar = tqdm(total=len(ds))
+
     for d in ds:
         users = OSFUser.objects.filter(
             is_active=True,
             id__in=Email.objects.filter(address__endswith=f'@{d}').values_list('user_id', flat=True).distinct()
         ).exclude(spam_status=2)
+
         ns = Node.objects.filter(_contributors__in=users, deleted__isnull=True, is_deleted=False).exclude(spam_status__in=[1,2]).distinct()
         rs = Registration.objects.filter(_contributors__in=users, deleted__isnull=True, is_deleted=False).exclude(spam_status__in=[1,2]).distinct()
         ps = Preprint.objects.filter(_contributors__in=users, deleted__isnull=True).exclude(machine_state='initial').exclude(spam_status__in=[1,2]).distinct()
+        
         domain_metrics = {
             'domain': d,
             'total_users': users.count(),
@@ -37,15 +43,19 @@ def get_more_domain_metrics(ds=None, name='institutional', v=0):
             'total_preprints': ps.count(),
             'published_preprints': ps.filter(is_public=True, is_published=True).exclude(machine_state='withdrawn').count()
         }
+
         for u in users:
             if 'VERIFIED' in list(u.external_identity.get('ORCID', {}).values()):
                 domain_metrics['orcid_total'] += 1
             if u.logs.filter(created__gte=target_date).exists() or u.preprint_logs.filter(created__gte=target_date).exists():
                 domain_metrics['annual_actions'] += 1
+
         writer.writerow(domain_metrics)
-        pbar.update(1)
-        if v:
-            print(domain_metrics)
+        pbar.update()
+
+    pbar.close()
+
     with open(filename, 'w') as writeFile:
         writeFile.write(output.getvalue())
-    pbar.close()
+
+    print(f"Output written to {filename}")

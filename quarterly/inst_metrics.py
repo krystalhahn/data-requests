@@ -5,19 +5,26 @@ def get_quarterly_inst_metrics():
     from django.utils import timezone
     import pytz
     from tqdm import tqdm
+
     filename = f'/tmp/institutional_metrics.csv'
     COL_HEADERS = ['institution.name', 'total_users', 'orcid_total', 'quarterly_login', 'quarterly_actions', 'total_preprints', 'public_top_projects', 'private_top_projects', 'public_projects', 'private_projects', 'public_registrations', 'private_registrations', 'embargoed_registrations', 'public_storage', 'private_storage']
     output = io.StringIO()
     writer = csv.DictWriter(output, COL_HEADERS)
     writer.writeheader()
+
     insts = Institution.objects.all()
+
+    pbar = tqdm(total=insts.count())
+
     jul = timezone.datetime(2025,7,1,tzinfo=pytz.utc)
     oct = timezone.datetime(2025,10,1,tzinfo=pytz.utc)
+
     for i in insts:
         users = OSFUser.objects.filter(
             institutionaffiliation__institution__id=i.id,
             is_active=True
         ).exclude(spam_status=2).distinct()
+
         domain_metrics = {
             'institution.name': i.name,
             'total_users': users.count(),
@@ -35,11 +42,19 @@ def get_quarterly_inst_metrics():
             'public_storage': sum([sum([s for s in n.files.values_list('versions__size', flat=True) if isinstance(s, int)]) for n in i.nodes.filter(is_public=True, deleted__isnull=True).exclude(spam_status=2)]),
             'private_storage': sum([sum([s for s in n.files.values_list('versions__size', flat=True) if isinstance(s, int)]) for n in i.nodes.filter(is_public=False, deleted__isnull=True).exclude(spam_status=2)])
         }
+
         for u in users:
             if 'VERIFIED' in list(u.external_identity.get('ORCID', {}).values()):
                 domain_metrics['orcid_total'] += 1
             if u.logs.filter(created__gte=jul, created__lt=oct).exists() or u.preprint_logs.filter(created__gte=jul, created__lt=oct).exists():
                 domain_metrics['quarterly_actions'] += 1
+
         writer.writerow(domain_metrics)
+        pbar.update(1)
+
+    pbar.close()
+
     with open(filename, 'w') as writeFile:
         writeFile.write(output.getvalue())
+
+    print(f"Output written to {filename}")
