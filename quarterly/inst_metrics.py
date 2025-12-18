@@ -1,5 +1,7 @@
-# Added top-level projects
-def get_quarterly_inst_metrics():
+# example usage
+get_quarterly_inst_metrics(2025, 3)  # Q3 of 2025 (July 1 - Sept 30)
+
+def get_quarterly_inst_metrics(year, quarter):
     import csv
     import io
     from django.utils import timezone
@@ -12,12 +14,18 @@ def get_quarterly_inst_metrics():
     writer = csv.DictWriter(output, COL_HEADERS)
     writer.writeheader()
 
+    # compute start and end datetimes of the specified quarter
+    quarter_months = {1: (1, 3), 2: (4, 6), 3: (7, 9), 4: (10, 12)}
+    start_month, end_month = quarter_months[quarter]
+    start_dt = timezone.datetime(year, start_month, 1, tzinfo=pytz.utc)
+    if end_month == 12:
+        end_dt = timezone.datetime(year + 1, 1, 1, tzinfo=pytz.utc)
+    else:
+        end_dt = timezone.datetime(year, end_month + 1, 1, tzinfo=pytz.utc)
+
     insts = Institution.objects.all()
 
     pbar = tqdm(total=insts.count())
-
-    jul = timezone.datetime(2025,7,1,tzinfo=pytz.utc)
-    oct = timezone.datetime(2025,10,1,tzinfo=pytz.utc)
 
     for i in insts:
         users = OSFUser.objects.filter(
@@ -29,7 +37,7 @@ def get_quarterly_inst_metrics():
             'institution.name': i.name,
             'total_users': users.count(),
             'orcid_total': 0,
-            'quarterly_login': users.filter(date_last_login__gte=jul, date_last_login__lt=oct).count(),
+            'quarterly_login': users.filter(date_last_login__gte=start_dt, date_last_login__lt=end_dt).count(),
             'quarterly_actions': 0,
             'total_preprints': Preprint.objects.filter(_contributors__in=users, is_public=True, is_published=True).exclude(spam_status=2).distinct().count(),
             'public_top_projects': i.nodes.filter(type='osf.node', is_public=True, deleted__isnull=True).exclude(spam_status=2).get_roots().count(),
@@ -46,11 +54,11 @@ def get_quarterly_inst_metrics():
         for u in users:
             if 'VERIFIED' in list(u.external_identity.get('ORCID', {}).values()):
                 domain_metrics['orcid_total'] += 1
-            if u.logs.filter(created__gte=jul, created__lt=oct).exists() or u.preprint_logs.filter(created__gte=jul, created__lt=oct).exists():
+            if u.logs.filter(created__gte=start_dt, created__lt=end_dt).exists() or u.preprint_logs.filter(created__gte=start_dt, created__lt=end_dt).exists():
                 domain_metrics['quarterly_actions'] += 1
 
         writer.writerow(domain_metrics)
-        pbar.update(1)
+        pbar.update()
 
     pbar.close()
 
