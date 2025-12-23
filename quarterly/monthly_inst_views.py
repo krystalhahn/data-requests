@@ -99,4 +99,4 @@ def get_monthly_total_views(year, start_month, end_month):
         writeFile.write(output.getvalue())
 
 # example usage
-get_monthly_total_views(2025, 7, 10) # Q3 of 2025
+get_monthly_total_views(2025, 7, 10)    # Q3 of 2025
