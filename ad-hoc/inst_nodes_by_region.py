@@ -4,6 +4,7 @@ get_inst_nodes_by_region('uom', 'Germany - Frankfurt')  # Manchester nodes not s
 def get_inst_nodes_by_region(inst_id, excl_region=None, public_only=True):
     import csv
     import io
+    from django.db.models import Q
     from tqdm import tqdm
 
     filename = f'/tmp/{inst_id}_node_regions.csv'
@@ -13,23 +14,18 @@ def get_inst_nodes_by_region(inst_id, excl_region=None, public_only=True):
     writer.writeheader()
 
     inst = Institution.objects.get(_id=inst_id)
-    qs = inst.nodes.filter(deleted__isnull=True)
 
+    filters = Q(deleted__isnull=True)
     if excl_region:
-        qs = qs.exclude(addons_osfstorage_node_settings__region__name=excl_region)
-
+        filters &= ~Q(addons_osfstorage_node_settings__region__name=excl_region)
     if public_only:
-        qs = qs.filter(is_public=True)
+        filters &= Q(is_public=True)
+
+    qs = inst.nodes.filter(filters)
 
     pbar = tqdm(total=qs.count())
 
     for n in qs:
-        region_name = n.addons_osfstorage_node_settings.region.name
-
-        # skip node if stored in specified region to exclude
-        if region_name == excl_region:
-            continue
-        
         # define affiliated_users
         affiliated_users = n.contributors.filter(institutionaffiliation__institution=inst).distinct()
 
@@ -45,7 +41,7 @@ def get_inst_nodes_by_region(inst_id, excl_region=None, public_only=True):
             'node.created': str(n.created.date()),
             'node.modified': str(n.modified.date()),
             'storage_bytes': n.storage_usage,
-            'region.name': region_name,
+            'region.name': n.addons_osfstorage_node_settings.region.name,
             'creator.id': n.creator._id,
             'creator.username': n.creator.username,
             'affiliated_contributors': list(affiliated_users.values_list('guids___id', flat=True)),
