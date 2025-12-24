@@ -4,6 +4,7 @@ get_inst_nodes_by_region('uom', 'Germany - Frankfurt')  # Manchester nodes not s
 def get_inst_nodes_by_region(inst_id, excl_region=None, public_only=True):
     import csv
     import io
+    from tqdm import tqdm
 
     filename = f'/tmp/{inst_id}_node_regions.csv'
     COL_HEADERS = ['inst.id', 'node.id', 'node.title', 'node.created', 'node.modified', 'storage_bytes', 'region.name', 'creator.id', 'affiliated_contributors', 'affiliated_emails', 'is_public']
@@ -13,6 +14,8 @@ def get_inst_nodes_by_region(inst_id, excl_region=None, public_only=True):
 
     inst = Institution.objects.get(_id=inst_id)
     qs = inst.nodes.filter(deleted__isnull=True)
+
+    pbar = tqdm(total=qs.count())
 
     if public_only:
         qs = qs.filter(is_public=True)
@@ -35,5 +38,10 @@ def get_inst_nodes_by_region(inst_id, excl_region=None, public_only=True):
             'affiliated_emails': list(n.contributors.filter(institutionaffiliation__institution=inst).distinct().values_list('username', flat=True)),
             'is_public': n.is_public
         })
+        pbar.update()
+
+    pbar.close()
     with open(filename, 'w') as writeFile:
         writeFile.write(output.getvalue())
+
+    print(f"Output written to {filename}")
