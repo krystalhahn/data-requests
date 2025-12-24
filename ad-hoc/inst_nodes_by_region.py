@@ -15,10 +15,13 @@ def get_inst_nodes_by_region(inst_id, excl_region=None, public_only=True):
     inst = Institution.objects.get(_id=inst_id)
     qs = inst.nodes.filter(deleted__isnull=True)
 
-    pbar = tqdm(total=qs.count())
+    if excl_region:
+        qs = qs.exclude(addons_osfstorage_node_settings__region__name=excl_region)
 
     if public_only:
         qs = qs.filter(is_public=True)
+
+    pbar = tqdm(total=qs.count())
 
     for n in qs:
         region_name = n.addons_osfstorage_node_settings.region.name
