@@ -7,7 +7,7 @@ def get_inst_nodes_by_region(inst_id, excl_region=None, public_only=True):
     from tqdm import tqdm
 
     filename = f'/tmp/{inst_id}_node_regions.csv'
-    COL_HEADERS = ['inst.id', 'node.id', 'node.title', 'node.created', 'node.modified', 'storage_bytes', 'region.name', 'creator.id', 'affiliated_contributors', 'affiliated_emails', 'is_public']
+    COL_HEADERS = ['inst.id', 'node.id', 'node.title', 'node.created', 'node.modified', 'storage_bytes', 'region.name', 'creator.id', 'creator.username', 'affiliated_contributors', 'affiliated_emails','affiliated_roles', 'is_public']
     output = io.StringIO()
     writer = csv.DictWriter(output, COL_HEADERS)
     writer.writeheader()
@@ -22,8 +22,18 @@ def get_inst_nodes_by_region(inst_id, excl_region=None, public_only=True):
 
     for n in qs:
         region_name = n.addons_osfstorage_node_settings.region.name
+
+        # skip node if stored in specified region to exclude
         if region_name == excl_region:
             continue
+        
+        # define affiliated_users
+        affiliated_users = n.contributors.filter(institutionaffiliation__institution=inst).distinct()
+
+        # gather roles for each affiliated user
+        affiliated_roles = {}
+        for user in affiliated_users:
+            affiliated_roles[user.username] = list(n.get_permissions(user))
 
         writer.writerow({
             'inst.id': inst._id,
@@ -34,8 +44,10 @@ def get_inst_nodes_by_region(inst_id, excl_region=None, public_only=True):
             'storage_bytes': n.storage_usage,
             'region.name': region_name,
             'creator.id': n.creator._id,
-            'affiliated_contributors': list(n.contributors.filter(institutionaffiliation__institution=inst).distinct().values_list('guids___id', flat=True)),
-            'affiliated_emails': list(n.contributors.filter(institutionaffiliation__institution=inst).distinct().values_list('username', flat=True)),
+            'creator.username': n.creator.username,
+            'affiliated_contributors': list(affiliated_users.values_list('guids___id', flat=True)),
+            'affiliated_emails': list(affiliated_users.values_list('username', flat=True)),
+            'affiliated_roles': affiliated_roles,
             'is_public': n.is_public
         })
         pbar.update()
