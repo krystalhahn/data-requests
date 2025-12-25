@@ -20,15 +20,28 @@ compare_dfs <- function(df1, df2, key_col, verbose = TRUE, return_result = FALSE
   }
   
   # identify numeric and non-numeric columns
-  num_cols <- sapply(df1, is.numeric)
-  non_num_cols <- names(df1)[!num_cols]
+  num_cols_logical <- sapply(df1, is.numeric)
+  num_cols <- which(num_cols_logical)
+  non_num_cols <- names(df1)[!num_cols_logical]
   
   # find numeric columns with differences (if any)
-  differing_numeric <- names(df1)[num_cols][
-    sapply(names(df1)[num_cols], function(col) {
-      !isTRUE(all.equal(df1[[col]], df2[[col]]))
-    })
-  ]
+  if (length(num_cols) > 0) {
+    differing_numeric <- names(df1)[num_cols][
+      sapply(names(df1)[num_cols], function(col) {
+        !isTRUE(all.equal(df1[[col]], df2[[col]]))
+      })
+    ]
+    
+    # check numeric identity
+    numeric_identical <- all(
+      sapply(names(df1)[num_cols], function(col) {
+        identical(as.numeric(df1[[col]]), as.numeric(df2[[col]]))
+      })
+    )
+  } else {
+    differing_numeric <- character(0)
+    numeric_identical <- TRUE
+  }
   
   # find non-numeric columns with differences
   differing_non_numeric <- non_num_cols[
@@ -36,13 +49,6 @@ compare_dfs <- function(df1, df2, key_col, verbose = TRUE, return_result = FALSE
       !isTRUE(all.equal(df1[[col]], df2[[col]], check.attributes = FALSE))
     })
   ]
-  
-  # check numeric identity
-  numeric_identical <- all(
-    sapply(names(df1)[num_cols], function(col) {
-      identical(as.numeric(df1[[col]]), as.numeric(df2[[col]]))
-    })
-  )
   
   # check full data equality ignoring attributes
   data_equal <- isTRUE(all.equal(df1, df2, check.attributes = FALSE))
