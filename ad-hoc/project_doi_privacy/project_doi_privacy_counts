@@ -74,3 +74,57 @@ def get_project_doi_privacy_counts():
 
     with open(filename, 'w') as writeFile:
         writeFile.write(output.getvalue())
+
+def get_doi_privacy_counts_by_domain(ds, name='institutional'):
+    from osf.metrics import CountedAuthUsage
+    import csv
+    import io
+    from django.db.models import OuterRef, Exists
+
+    filename = f'/tmp/{name}_doi_privacy_counts.csv'
+    COL_HEADERS = [
+        'domain', 'public_projects_doi', 'public_projects_no_doi', 'public_projects', 'private_projects_doi', 'private_projects_no_doi', 'private_projects', 'public_reg_doi', 'public_reg_no_doi', 'public_reg', 'private_reg_doi', 'private_reg_no_doi', 'private_reg', 'public_prepr_doi', 'public_prepr_no_doi', 'public_prepr', 'private_prepr_doi', 'private_prepr_no_doi', 'private_prepr'
+    ]
+    
+    output = io.StringIO()
+    writer = csv.DictWriter(output, COL_HEADERS)
+    writer.writeheader()
+
+    # filter for DOIs linked to Nodes and Preprints
+    n_iqs = Identifier.objects.filter(content_type=30, object_id=OuterRef('pk'), category='doi', value__isnull=False)
+    p_iqs = Identifier.objects.filter(content_type=47, object_id=OuterRef('pk'), category='doi', value__isnull=False)
+
+    for d in ds:
+        target_users = OSFUser.objects.filter(
+            is_active=True, emails__address__endswith=d
+        ).exclude(spam_status__in=[1,2]).values_list('id', flat=True)
+        
+        # retrieve nodes, registrations, and preprints for domain users
+        domain_nodes = Node.objects.filter(_contributors__in=target_users, deleted__isnull=True, is_deleted=False).distinct()
+        domain_regs = Registration.objects.filter(_contributors__in=target_users, deleted__isnull=True, is_deleted=False).distinct()
+        domain_preprints = Preprint.objects.filter(_contributors__in=target_users, deleted__isnull=True).distinct()
+
+        writer.writerow({
+            'domain': d,
+            'public_projects_doi': domain_nodes.annotate(has_doi=Exists(n_iqs)).filter(has_doi=True, is_public=True).count(),
+            'public_projects_no_doi': domain_nodes.annotate(has_doi=Exists(n_iqs)).filter(has_doi=False, is_public=True).count(),
+            'public_projects': domain_nodes.filter(is_public=True).count(),
+            'private_projects_doi': domain_nodes.annotate(has_doi=Exists(n_iqs)).filter(has_doi=True, is_public=False).count(),
+            'private_projects_no_doi': domain_nodes.annotate(has_doi=Exists(n_iqs)).filter(has_doi=False, is_public=False).count(),
+            'private_projects': domain_nodes.filter(is_public=False).count(),
+            'public_reg_doi': domain_regs.annotate(has_doi=Exists(n_iqs)).filter(has_doi=True, is_public=True).count(),
+            'public_reg_no_doi': domain_regs.annotate(has_doi=Exists(n_iqs)).filter(has_doi=False, is_public=True).count(),
+            'public_reg': domain_regs.filter(is_public=True).count(),
+            'private_reg_doi': domain_regs.annotate(has_doi=Exists(n_iqs)).filter(has_doi=True, is_public=False).count(),
+            'private_reg_no_doi': domain_regs.annotate(has_doi=Exists(n_iqs)).filter(has_doi=False, is_public=False).count(),
+            'private_reg': domain_regs.filter(is_public=False).count(),
+            'public_prepr_doi': domain_preprints.annotate(has_doi=Exists(p_iqs)).filter(has_doi=True, is_public=True).count(),
+            'public_prepr_no_doi': domain_preprints.annotate(has_doi=Exists(p_iqs)).filter(has_doi=False, is_public=True).count(),
+            'public_prepr': domain_preprints.filter(is_public=True).count(),
+            'private_prepr_doi': domain_preprints.annotate(has_doi=Exists(p_iqs)).filter(has_doi=True, is_public=False).count(),
+            'private_prepr_no_doi': domain_preprints.annotate(has_doi=Exists(p_iqs)).filter(has_doi=False, is_public=False).count(),
+            'private_prepr': domain_preprints.filter(is_public=False).count()
+        })
+
+    with open(filename, 'w') as writeFile:
+        writeFile.write(output.getvalue())
