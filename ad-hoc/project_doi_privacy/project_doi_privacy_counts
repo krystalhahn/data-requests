@@ -1,0 +1,37 @@
+def get_project_doi_privacy_counts():
+    from osf.metrics import CountedAuthUsage
+    import csv
+    import io
+    filename = '/tmp/project_doi_privacy_counts.csv'
+    COL_HEADERS = ['public_projects_doi', 'public_projects_no_doi', 'public_projects', 'private_projects_doi', 'private_projects_no_doi', 'private_projects','public_reg_doi', 'public_reg_no_doi', 'public_reg', 'private_reg_doi', 'private_reg_no_doi', 'private_reg', 'public_prepr_doi', 'public_prepr_no_doi', 'public_prepr', 'private_prepr_doi', 'private_prepr_no_doi', 'private_prepr']
+    output = io.StringIO()
+    writer = csv.DictWriter(output, COL_HEADERS)
+    writer.writeheader()
+
+    n_iqs = Identifier.objects.filter(content_type=30, object_id=OuterRef('pk'), category='doi', value__isnull=False)
+    p_iqs = Identifier.objects.filter(content_type=47, object_id=OuterRef('pk'), category='doi', value__isnull=False)
+
+    writer.writerow({
+        'public_projects_doi': Node.objects.annotate(has_doi=Exists(n_iqs)).filter(has_doi=True, is_public=True).count(),
+        'public_projects_no_doi': Node.objects.annotate(has_doi=Exists(n_iqs)).filter(has_doi=False, is_public=True).count(),
+        'public_projects': Node.objects.filter(is_public=True).count(),
+        'private_projects_doi': Node.objects.annotate(has_doi=Exists(n_iqs)).filter(has_doi=True, is_public=False).count(),
+        'private_projects_no_doi': Node.objects.annotate(has_doi=Exists(n_iqs)).filter(has_doi=False, is_public=False).count(),
+        'private_projects': Node.objects.filter(is_public=False).count(),
+        'public_reg_doi': Registration.objects.annotate(has_doi=Exists(n_iqs)).filter(has_doi=True, is_public=True).count(),
+        'public_reg_no_doi': Registration.objects.annotate(has_doi=Exists(n_iqs)).filter(has_doi=False, is_public=True).count(),
+        'public_reg': Registration.objects.filter(is_public=True).count(),
+        'private_reg_doi': Registration.objects.annotate(has_doi=Exists(n_iqs)).filter(has_doi=True, is_public=False).count(),
+        'private_reg_no_doi': Registration.objects.annotate(has_doi=Exists(n_iqs)).filter(has_doi=False, is_public=False).count(),
+        'private_reg': Registration.objects.filter(is_public=False).count(),
+        'public_prepr_doi': Preprint.objects.annotate(has_doi=Exists(p_iqs)).filter(has_doi=True, is_public=True).count(),
+        'public_prepr_no_doi': Preprint.objects.annotate(has_doi=Exists(p_iqs)).filter(has_doi=False, is_public=True).count(),
+        'public_prepr': Preprint.objects.filter(is_public=True).count(),
+        'private_prepr_doi': Preprint.objects.annotate(has_doi=Exists(p_iqs)).filter(has_doi=True, is_public=False).count(),
+        'private_prepr_no_doi': Preprint.objects.annotate(has_doi=Exists(p_iqs)).filter(has_doi=False, is_public=False).count(),
+        'private_prepr': Preprint.objects.filter(is_public=False).count()
+        
+    })
+
+    with open(filename, 'w') as writeFile:
+        writeFile.write(output.getvalue())
