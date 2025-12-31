@@ -1,89 +1,70 @@
-def get_target_creators():
-    import io
+def get_target_creators(content_type, year, month):
     import csv
+    from collections import defaultdict
     from tqdm import tqdm
-
-    from django.db.models.aggregates import Count
-    from django.db.models.expressions import F, Func, Subquery
-    from django.db.models import Value
+    from django.contrib.contenttypes.models import ContentType
 
     filename = '/tmp/target_creators.csv'
     fieldnames = ['creator_user_id', 'creator_guid', 'file_count', 'file_guids']
-    output = io.StringIO()
-    writer = csv.DictWriter(output, fieldnames=fieldnames)
-    writer.writeheader()
 
-    # collect file IDs & map to GUIDs for Aug–Sep 2025
-    print("Collecting File GUIDs for Aug–Sep 2025…")
+    # open CSV for streaming write
+    with open(filename, 'w', newline='') as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
 
-    file_guids_qs = Guid.objects.filter(
-        content_type__model="basefilenode",
-        created__year=2025,
-        created__month__in=[8, 9],
-    )
+        print("Collecting file GUIDs for specified month(s)")
+        file_guids_qs = Guid.objects.filter(
+            content_type__model=content_type,
+            created__year=year,
+            created__month__in=month,
+        )
 
-    file_ids = list(file_guids_qs.values_list("object_id", flat=True))
-    print(f"Found {len(file_ids):,} file GUIDs.")
+        # map file_id -> GUID, streamed
+        file_guid_map = {g.object_id: g._id for g in file_guids_qs.iterator(chunk_size=5000)}
+        file_ids = list(file_guid_map.keys())
+        print(f"Found {len(file_ids):,} file GUIDs.")
 
-    # map file_id -> GUID
-    file_guid_map = {g.object_id: g._id for g in file_guids_qs}
+        # stream OsfStorageFile rows
+        print("Fetching OsfStorageFile rows…")
+        file_to_target = {}
+        for f_row in OsfStorageFile.objects.filter(id__in=file_ids).values(
+            "id", "target_content_type_id", "target_object_id"
+        ).iterator(chunk_size=5000):
+            file_to_target[f_row["id"]] = (f_row["target_content_type_id"], f_row["target_object_id"])
 
-    # stream OsfStorageFile rows in batches
-    print("Fetching OsfStorageFile rows in batches…")
-    queryset = OsfStorageFile.objects.filter(id__in=file_ids).values(
-        "id", "target_content_type_id", "target_object_id"
-    )
+        # group target IDs by content type
+        ct_to_targets = defaultdict(set)
+        for ct_id, target_id in file_to_target.values():
+            ct_to_targets[ct_id].add(target_id)
 
-    by_ct = defaultdict(list)
-    for row in tqdm(queryset.iterator(chunk_size=5000), total=len(file_ids)):
-        by_ct[row["target_content_type_id"]].append(row["target_object_id"])
+        # resolve creators per content type in batches
+        creator_to_file_guids = defaultdict(list)
+        for ct_id, target_ids in ct_to_targets.items():
+            model = ContentType.objects.get(id=ct_id).model_class()
+            print(f"Processing {len(target_ids):,} targets for content type {model.__name__}…")
+            for target in model.objects.filter(id__in=target_ids).values("id", "creator_id").iterator(chunk_size=5000):
+                target_id = target["id"]
+                creator_id = target["creator_id"]
+                if creator_id:
+                    # find all files pointing to this target
+                    for file_id, (f_ct_id, f_target_id) in file_to_target.items():
+                        if f_ct_id == ct_id and f_target_id == target_id:
+                            creator_to_file_guids[creator_id].append(file_guid_map[file_id])
 
-    # resolve model classes for each content type
-    print("Resolving content types…")
-    ct_models = {ct.id: ct.model_class() for ct in ContentType.objects.filter(id__in=by_ct.keys())}
+        # fetch creator GUIDs in batches
+        print("Fetching creator GUIDs…")
+        creator_ids = list(creator_to_file_guids.keys())
+        creator_guid_map = {}
+        for user in OSFUser.objects.filter(id__in=creator_ids).values("id", "guids___id").iterator(chunk_size=5000):
+            creator_guid_map[user["id"]] = user["guids___id"]
 
-    # map creator_id → list of file IDs
-    creator_to_files = defaultdict(list)
-
-    # bulk resolve creators per target model
-    print("Resolving target creators in bulk…")
-
-    for ct_id, object_ids in by_ct.items():
-        model = ct_models[ct_id]
-        print(f"  - Processing {len(object_ids):,} objects from {model.__name__}")
-
-        qs = model.objects.filter(id__in=object_ids).values("id", "creator_id")
-        for row in tqdm(qs.iterator(chunk_size=5000), total=len(object_ids)):
-            creator_id = row["creator_id"]
-            if creator_id:
-                creator_to_files[creator_id].append(row["id"])
-
-    # fetch creator GUIDs in bulk
-    print("Fetching creator GUIDs…")
-    creator_qs = OSFUser.objects.filter(id__in=creator_to_files.keys()).values("id", "guids___id")
-    creator_guid_map = {row["id"]: row["guids___id"] for row in creator_qs}
-
-    # sort by file_count DESC
-    print("Sorting creators by file_count…")
-    sorted_creators = sorted(
-        creator_to_files.items(),
-        key=lambda x: len(x[1]),
-        reverse=True
-    )
-
-    print("Writing CSV rows…")
-    for creator_id, file_ids in tqdm(sorted_creators):
-        guid_list = [file_guid_map[file_id] for file_id in file_ids if file_id in file_guid_map]
-        if not guid_list:
-            continue  # skip creators with no files with GUIDs
-        writer.writerow({
-            "creator_user_id": creator_id,
-            "creator_guid": creator_guid_map.get(creator_id),
-            "file_count": len(guid_list),
-            "file_guids": ",".join(guid_list),
-        })
-
-    with open(filename, 'w') as writeFile:
-        writeFile.write(output.getvalue())
+        print("Writing CSV rows…")
+        for creator_id, guid_list in tqdm(creator_to_file_guids.items()):
+            writer.writerow({
+                "creator_user_id": creator_id,
+                "creator_guid": creator_guid_map.get(creator_id),
+                "file_count": len(guid_list),
+                "file_guids": ",".join(guid_list),
+            })
 
     print(f"Output written to {filename}")
