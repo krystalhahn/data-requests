@@ -6,7 +6,7 @@ def write_nps_users_names_orcids(active_only=True, nonspam_only=True):
     from django.db.models import Q
     from tqdm import tqdm
 
-    filename = f'/tmp/nps_users_names_orcids_all.csv'
+    filename = f'/tmp/nps_users_names_orcids.csv'
     fieldnames = ['u._id', 'u.username', 'u.fullname', 'u.given_name', 'u.middle_names', 'u.family_name', 'u.orcid', 'u.date_confirmed', 'u.is_active', 'u.is_spam', 'u.deleted']
     output = io.StringIO()
     writer = csv.DictWriter(output, fieldnames)
