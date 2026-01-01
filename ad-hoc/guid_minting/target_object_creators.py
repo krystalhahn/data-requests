@@ -28,9 +28,9 @@ def get_target_creators(content_type, year, month):
         print("Fetching OsfStorageFile rows…")
         file_to_target = {}
         for f_row in OsfStorageFile.objects.filter(id__in=file_ids).values(
-            "id", "target_content_type_id", "target_object_id"
+            'id', 'target_content_type_id', 'target_object_id'
         ).iterator(chunk_size=5000):
-            file_to_target[f_row["id"]] = (f_row["target_content_type_id"], f_row["target_object_id"])
+            file_to_target[f_row['id']] = (f_row['target_content_type_id'], f_row['target_object_id'])
 
         # group target IDs by content type
         ct_to_targets = defaultdict(set)
@@ -42,9 +42,9 @@ def get_target_creators(content_type, year, month):
         for ct_id, target_ids in ct_to_targets.items():
             model = ContentType.objects.get(id=ct_id).model_class()
             print(f"Processing {len(target_ids):,} targets for content type {model.__name__}…")
-            for target in model.objects.filter(id__in=target_ids).values("id", "creator_id").iterator(chunk_size=5000):
-                target_id = target["id"]
-                creator_id = target["creator_id"]
+            for target in model.objects.filter(id__in=target_ids).values('id', 'creator_id').iterator(chunk_size=5000):
+                target_id = target['id']
+                creator_id = target['creator_id']
                 if creator_id:
                     # find all files pointing to this target
                     for file_id, (f_ct_id, f_target_id) in file_to_target.items():
@@ -55,16 +55,16 @@ def get_target_creators(content_type, year, month):
         print("Fetching creator GUIDs…")
         creator_ids = list(creator_to_file_guids.keys())
         creator_guid_map = {}
-        for user in OSFUser.objects.filter(id__in=creator_ids).values("id", "guids___id").iterator(chunk_size=5000):
-            creator_guid_map[user["id"]] = user["guids___id"]
+        for user in OSFUser.objects.filter(id__in=creator_ids).values('id', 'guids___id').iterator(chunk_size=5000):
+            creator_guid_map[user['id']] = user['guids___id']
 
         print("Writing CSV rows…")
         for creator_id, guid_list in tqdm(creator_to_file_guids.items()):
             writer.writerow({
-                "creator_user_id": creator_id,
-                "creator_guid": creator_guid_map.get(creator_id),
-                "file_count": len(guid_list),
-                "file_guids": ",".join(guid_list),
+                'creator_user_id': creator_id,
+                'creator_guid': creator_guid_map.get(creator_id),
+                'file_count': len(guid_list),
+                'file_guids': ','.join(guid_list),
             })
 
     print(f"Output written to {filename}")
