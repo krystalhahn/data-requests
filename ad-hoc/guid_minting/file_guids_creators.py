@@ -176,3 +176,49 @@ def inspect_file_guids_creators(content_type_model, year, month):
             })
 
     print(f"Output written to {filename}")
+
+# inspect_file_guids() and inspect_file_guids_creators() yield different number of rows in output
+# the former pulls data at the GUID level while the latter pulls at the file level
+# so more rows in the former output suggests some files have multiple GUIDs
+def find_files_with_multiple_guids(content_type_model, year, month):
+    import csv
+    from collections import defaultdict
+    from django.contrib.contenttypes.models import ContentType
+
+    filename = '/tmp/files_with_multiple_guids.csv'
+    fieldnames = ['file_id', 'guid_count', 'guids']
+
+    ct = ContentType.objects.get(model=content_type_model)
+
+    print("Collecting GUIDs…")
+    guid_qs = Guid.objects.filter(
+        content_type=ct,
+        created__year=year,
+        created__month__in=month,
+    )
+
+    file_to_guids = defaultdict(list)
+
+    for g in guid_qs.iterator(chunk_size=5000):
+        file_to_guids[g.object_id].append(g._id)
+
+    multi_guid_files = {
+        file_id: guids
+        for file_id, guids in file_to_guids.items()
+        if len(guids) > 1
+    }
+
+    print(f"Found {len(multi_guid_files):,} files with multiple GUIDs.")
+
+    with open(filename, 'w', newline='') as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+
+        for file_id, guids in multi_guid_files.items():
+            writer.writerow({
+                'file_id': file_id,
+                'guid_count': len(guids),
+                'guids': ','.join(guids),
+            })
+
+    print(f"Output written to {filename}")
