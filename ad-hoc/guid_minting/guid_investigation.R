@@ -3,6 +3,7 @@ library(dplyr)
 library(tidyverse)
 
 # get creators of GUID target objects ----
+# from target_object_creators.py
 
 ## August and September ----
 # 814447 file GUIDs created
@@ -23,6 +24,7 @@ summary(target_creators_67$file_count)
 # 1.000    1.000    2.000    3.223    3.000 1419.000
 
 # get creators of latest file version ----
+# from latest_version_creators.py
 
 ## August and September ----
 latest_version_creators_89 <- read_csv("~/Desktop/latest_version_creators_with_versions_89.csv")
@@ -41,6 +43,7 @@ summary(latest_version_creators_67$file_count)
 # 1.000   1.000   1.000   2.961   3.000 636.000
 
 # get creators of file version when GUID was minted ----
+# from minted_version_creators.py
 
 ## August and September ----
 minted_version_creators_89 <- read_csv("~/Desktop/creators_at_guid_version_89.csv")
@@ -65,6 +68,7 @@ summary(minted_version_creators_67$file_count)
 view(latest_version_creators_67 %>% filter(!creator_guid %in% minted_version_creators_67$creator_guid))
 
 # validate creator datasets: go from file level ----
+# from file_guids_creators.py, using inspect_file_guids_creators()
 
 ## August and September ----
 file_info_8 <- read_csv("~/Desktop/file_guids_creators_8_n.csv",
