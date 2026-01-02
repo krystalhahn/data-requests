@@ -14,7 +14,7 @@ summary(target_creators_89$file_count)
 # Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
 # 1.00    1.00    2.00   12.63    7.00 2632.00 
 
-## July and June ----
+## June and July ----
 # 119075 file GUIDs created
 target_creators_67 <- read_csv("~/Desktop/target_creators_67.csv")
 # 31620
