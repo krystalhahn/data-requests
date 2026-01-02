@@ -27,7 +27,7 @@ summary(target_creators_67$file_count)
 # from latest_version_creators.py
 
 ## August and September ----
-latest_version_creators_89 <- read_csv("~/Desktop/latest_version_creators_with_versions_89.csv")
+latest_version_creators_89 <- read_csv("~/Desktop/latest_version_creators_89.csv")
 # 54909
 
 summary(latest_version_creators_89$file_count)
@@ -35,7 +35,7 @@ summary(latest_version_creators_89$file_count)
 # 1.00    1.00    2.00   12.28    7.00 3317.00 
 
 ## June and July ----
-latest_version_creators_67 <- read_csv("~/Desktop/latest_version_creators_with_versions_67.csv")
+latest_version_creators_67 <- read_csv("~/Desktop/latest_version_creators_67.csv")
 # 28486
 
 summary(latest_version_creators_67$file_count)
@@ -46,7 +46,7 @@ summary(latest_version_creators_67$file_count)
 # from minted_version_creators.py
 
 ## August and September ----
-minted_version_creators_89 <- read_csv("~/Desktop/creators_at_guid_version_89.csv")
+minted_version_creators_89 <- read_csv("~/Desktop/minted_version_creators_89.csv")
 # 54909
 
 summary(minted_version_creators_89$file_count)
@@ -58,7 +58,7 @@ view(latest_version_creators_89 %>% filter(!creator_guid %in% minted_version_cre
 # shows cases in which the creator of the latest version is different from the creator of the version at GUID minting
 
 ## June and July ----
-minted_version_creators_67 <- read_csv("~/Desktop/creators_at_guid_version_67.csv")
+minted_version_creators_67 <- read_csv("~/Desktop/minted_version_creators_67.csv")
 # 28479
 
 summary(minted_version_creators_67$file_count)
@@ -71,10 +71,10 @@ view(latest_version_creators_67 %>% filter(!creator_guid %in% minted_version_cre
 # from file_guids_creators.py, using inspect_file_guids_creators()
 
 ## August and September ----
-file_info_8 <- read_csv("~/Desktop/file_guids_creators_8_n.csv",
+file_info_8 <- read_csv("~/Desktop/file_guids_creators_8.csv",
                         col_types = cols(deleted = col_datetime()))
 
-file_info_9 <- read_csv("~/Desktop/file_guids_creators_9_n.csv",
+file_info_9 <- read_csv("~/Desktop/file_guids_creators_9.csv",
                         col_types = cols(deleted = col_datetime()))
 
 file_info_89 <- file_info_8 %>% 
