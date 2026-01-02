@@ -3,7 +3,6 @@ library(dplyr)
 library(tidyverse)
 
 # get creators of GUID target objects ----
-# in specified months
 
 ## August and September ----
 # 814447 file GUIDs created
@@ -24,6 +23,7 @@ summary(target_creators_67$file_count)
 # 1.000    1.000    2.000    3.223    3.000 1419.000
 
 # get creators of latest file version ----
+
 ## August and September ----
 latest_version_creators_89 <- read_csv("~/Desktop/latest_version_creators_with_versions_89.csv")
 # 54909
@@ -41,15 +41,6 @@ summary(latest_version_creators_67$file_count)
 # 1.000   1.000   1.000   2.961   3.000 636.000
 
 # get creators of file version when GUID was minted ----
-## June and July ----
-minted_version_creators_67 <- read_csv("~/Desktop/creators_at_guid_version_67.csv")
-# 28479
-
-summary(minted_version_creators_67$file_count)
-# Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
-# 1.000   1.000   1.000   2.962   3.000 636.000
-
-view(version_creators_67 %>% filter(!creator_guid %in% minted_version_creators_67$creator_guid))
 
 ## August and September ----
 minted_version_creators_89 <- read_csv("~/Desktop/creators_at_guid_version_89.csv")
@@ -60,8 +51,36 @@ summary(minted_version_creators_89$file_count)
 # 1.00    1.00    2.00   12.28    7.00 3317.00 
 # this is the exact same as the creators of the latest version
 # however, there are slightly different numbers of creators
-view(version_creators_89 %>% filter(!creator_guid %in% minted_version_creators_89$creator_guid))
+view(latest_version_creators_89 %>% filter(!creator_guid %in% minted_version_creators_89$creator_guid))
 # shows cases in which the creator of the latest version is different from the creator of the version at GUID minting
+
+## June and July ----
+minted_version_creators_67 <- read_csv("~/Desktop/creators_at_guid_version_67.csv")
+# 28479
+
+summary(minted_version_creators_67$file_count)
+# Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+# 1.000   1.000   1.000   2.962   3.000 636.000
+
+view(latest_version_creators_67 %>% filter(!creator_guid %in% minted_version_creators_67$creator_guid))
+
+# validate creator datasets: go from file level ----
+
+## August and September ----
+file_info_8 <- read_csv("~/Desktop/file_guids_creators_8_n.csv",
+                        col_types = cols(deleted = col_datetime()))
+
+file_info_9 <- read_csv("~/Desktop/file_guids_creators_9_n.csv",
+                        col_types = cols(deleted = col_datetime()))
+
+file_info_89 <- file_info_8 %>% 
+  bind_rows(file_info_9) %>%
+  mutate(same_creator = ifelse(latest_version_creator == minted_version_creator, T, F))
+# confirmed no dup GUIDs
+
+table(file_info_89$same_creator)
+# FALSE   TRUE 
+# 68 673355 
 
 ### validate latest_version_creators ----
 rebuilt_latest_version_creators_89 <- file_info_89 %>%
