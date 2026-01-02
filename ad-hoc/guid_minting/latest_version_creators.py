@@ -7,7 +7,7 @@ def get_latest_version_creators(content_type, year, month):
     from django.db.models import OuterRef, Subquery, Count
     from django.contrib.contenttypes.models import ContentType
 
-    filename = "/tmp/latest_version_creators_with_versions.csv"
+    filename = "/tmp/latest_version_creators.csv"
     fieldnames = ['creator_user_id', 'creator_guid', 'file_count', 'total_versions', 'file_guids']
 
     BATCH_SIZE = 50_000

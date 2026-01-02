@@ -1,12 +1,12 @@
 # get creator of file version at the time of GUID creation in specified months
-def get_version_creators_at_guid_creation(content_type, year, month):
+def get_minted_version_creators(content_type, year, month):
     import csv
     from collections import defaultdict
     from tqdm import tqdm
     from django.db.models import OuterRef, Subquery, Count, F
     from django.contrib.contenttypes.models import ContentType
 
-    filename = '/tmp/creators_at_guid_version.csv'
+    filename = '/tmp/minted_version_creators.csv'
     fieldnames = ['creator_user_id', 'creator_guid', 'file_count', 'total_versions', 'file_guids']
 
     BATCH_SIZE = 50_000
