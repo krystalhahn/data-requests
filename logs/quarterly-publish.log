@@ -1,0 +1,31 @@
+INFO  [2026-01-09 11:24:42] Publishing quarterly institutions data on Google Drive.
+INFO  [2026-01-09 11:24:48] 	Writing all_domain_metrics.csv.
+INFO  [2026-01-09 11:24:48] 	Creating 2025-Q4 folder if it doesn't exist.
+INFO  [2026-01-09 11:24:59] 	Writing inst_active_users.csv.
+INFO  [2026-01-09 11:24:59] 	Creating 2025-Q4 folder if it doesn't exist.
+INFO  [2026-01-09 11:25:17] 	Writing inst_preprintprovider_metrics.csv.
+INFO  [2026-01-09 11:25:17] 	Creating 2025-Q4 folder if it doesn't exist.
+INFO  [2026-01-09 11:25:26] 	Writing institutional_metrics.csv.
+INFO  [2026-01-09 11:25:26] 	Creating 2025-Q4 folder if it doesn't exist.
+INFO  [2026-01-09 11:25:34] 	Writing regional_storage_metrics.csv.
+INFO  [2026-01-09 11:25:34] 	Creating 2025-Q4 folder if it doesn't exist.
+INFO  [2026-01-09 11:25:43] 	Writing top_inst_views_2025_q4.csv.
+INFO  [2026-01-09 11:25:43] 	Creating 2025-Q4 folder if it doesn't exist.
+INFO  [2026-01-09 11:25:51] 	Writing monthly_inst_views_2025_q4.csv.
+INFO  [2026-01-09 11:25:51] 	Creating 2025-Q4 folder if it doesn't exist.
+INFO  [2026-01-09 11:25:59] Publishing complete!
+
+
+INFO  [2026-01-09 11:37:24] Publishing quarterly institutions data on Google Drive.
+INFO  [2026-01-09 11:37:27] 	Checking for 2025-Q4 subfolder
+INFO  [2026-01-09 11:37:28] 	Folder not found.  Creating 2025-Q4 subfolder.
+INFO  [2026-01-09 11:37:29] 	Writing all_domain_metrics.csv.
+INFO  [2026-01-09 11:37:40] 	Writing inst_active_users.csv.
+INFO  [2026-01-09 11:37:57] 	Writing inst_preprintprovider_metrics.csv.
+INFO  [2026-01-09 11:38:04] 	Writing institutional_metrics.csv.
+INFO  [2026-01-09 11:38:12] 	Writing regional_storage_metrics.csv.
+INFO  [2026-01-09 11:38:19] 	Writing top_inst_views_2025_q4.csv.
+INFO  [2026-01-09 11:38:26] 	Writing monthly_inst_views_2025_q4.csv.
+INFO  [2026-01-09 11:38:35] Publishing complete!
+
+
