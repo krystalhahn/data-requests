@@ -18,6 +18,6 @@ merge_nps_users_insts <- function(nps_users_path, nps_insts_path, output_path) {
 
 # example usage
 # update the file paths below to match local file locations
-merge_users_insts("~/Desktop/nps_users_1202.csv",
+merge_nps_users_insts("~/Desktop/nps_users_1202.csv",
                   "~/Desktop/nps_users_insts_1202.csv",
                   "~/Desktop/nps_users_2025-12-02.csv")
