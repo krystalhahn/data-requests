@@ -3,15 +3,16 @@
 # number of registrations with at least 1 outcome linked in the related resource paper section
 # number of registrations with both an output and outcome linked (LOS)
 
-def get_all_registry_reg():
+def get_all_registrations_for_los():
     import csv
     import io
     from django.utils import timezone
     from osf.utils.outcomes import ArtifactTypes
     from osf.models import Identifier, OutcomeArtifact
     from tqdm import tqdm
-    filename = '/tmp/all_registry_reg.csv'
-    COL_HEADERS = ['reg_guid', 'author_guid', 'registry', 'template', 'date_registered', 'connected_outputs']
+    filename = '/tmp/all_registrations_for_los.csv'
+    COL_HEADERS = ['reg_guid', 'author_guid', 'is_public', 'is_deleted', 'date_registered', 'moderation_state', 'retraction_state', 'spam_status', 
+                   'registry', 'template', 'connected_outputs', 'institution', 'subject', 'subject_parent']
     output = io.StringIO()
     writer = csv.DictWriter(output, COL_HEADERS)
     writer.writeheader()
@@ -40,11 +41,19 @@ def get_all_registry_reg():
 
         writer.writerow({
             'reg_guid': reg._id,
+            'is_public': reg.is_public,
+            'is_deleted': reg.deleted is not None,
+            'date_registered': reg.registered_date.date().isoformat(),
+            'moderation_state': reg.moderation_state,
+            'retraction_state': reg.retraction.state if reg.retraction else None,
+            'spam_status': reg.spam_status,
             'author_guid': reg.creator._id,
             'registry': reg.provider._id,
             'template': reg.registered_schema.all()[0].name,
-            'date_registered': reg.registered_date.date().isoformat(),
-            'connected_outputs': connected_resources
+            'connected_outputs': connected_resources,
+            'institution': list(reg.affiliated_institutions.values_list('name', flat=True)) if hasattr(reg, 'affiliated_institutions') else [],
+            'subject': list(reg.subjects.filter(parent_id__isnull=False).values_list('text', flat=True)) if hasattr(reg, 'subjects') else [],
+            'subject_parent': list(reg.subjects.filter(parent_id__isnull=True).values_list('text', flat=True)) if hasattr(reg, 'subjects') else [],
         })
         pbar.update()
 
