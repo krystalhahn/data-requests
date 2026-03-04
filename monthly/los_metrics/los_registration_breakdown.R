@@ -7,6 +7,8 @@ library(tibble)
 library(purrr)
 library(tidyr)
 
+# overall LOS registration metrics ----
+
 # number of public registrations on the OSF
 # number of registrations with (at least 1) outputs in the related resources (data, code, materials) sections
 # number of registrations with at least 1 outcome linked in the related resource paper section
@@ -25,6 +27,8 @@ table(public_reg$has_output)
 table(public_reg$has_outcome)
 table(public_reg$is_los)
 
+# breakdown by attribute ----
+
 # affiliated institutions
 table(public_reg$institution == "[]")
 
@@ -35,7 +39,7 @@ public_reg_inst <- public_reg %>%
   count(institution, sort = TRUE)
 
 # funder represented in metadata
-table(is.na(public_reg_f$funder))
+table(is.na(public_reg$funder))
 
 public_reg_funder <- public_reg %>%
   mutate(funder = str_extract_all(funder, "[^\\[\\]',]+")) %>%
@@ -57,3 +61,8 @@ public_reg_allsubject <- public_reg %>%
   mutate(subject = str_trim(subject)) %>%
   count(subject, sort = TRUE)
 
+# registration template
+view(table(public_reg$template))
+
+# registration provider
+view(table(public_reg$registry))
