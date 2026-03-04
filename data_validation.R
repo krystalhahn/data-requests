@@ -7,8 +7,14 @@ compare_dfs(inst_metrics, inst_metrics_parameterized, "institution.name")
 
 compare_dfs <- function(df1, df2, key_col, verbose = TRUE, return_result = FALSE) {
   # ensure consistent row order
-  if (!is.null(key_col) && key_col %in% names(df1) && key_col %in% names(df2)) {
-    df2 <- df2[match(df1[[key_col]], df2[[key_col]]), ]
+  if (!is.null(key_col) && all(key_col %in% names(df1)) && all(key_col %in% names(df2))) {
+    if (length(key_col) == 1) {
+      df2 <- df2[match(df1[[key_col]], df2[[key_col]]), ]
+    } else {
+      key1 <- do.call(paste, c(df1[key_col], sep = "___"))
+      key2 <- do.call(paste, c(df2[key_col], sep = "___"))
+      df2 <- df2[match(key1, key2), ]
+    }
   }
   
   # check column names (matters if columns were added or removed)
