@@ -12,7 +12,7 @@ def get_all_registrations_for_los():
     from tqdm import tqdm
     filename = '/tmp/all_registrations_for_los.csv'
     COL_HEADERS = ['reg_guid', 'author_guid', 'is_public', 'is_deleted', 'date_registered', 'moderation_state', 'retraction_state', 'spam_status', 
-                   'registry', 'template', 'connected_outputs', 'institution', 'subject', 'subject_parent']
+                   'registry', 'template', 'connected_outputs', 'institution', 'subject', 'subject_parent', 'funder', 'funder_identifier', 'funder_identifier_type']
     output = io.StringIO()
     writer = csv.DictWriter(output, COL_HEADERS)
     writer.writeheader()
