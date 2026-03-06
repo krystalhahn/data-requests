@@ -43,3 +43,5 @@ def get_boa_addon_projects(n=None):
     pbar.close()
     with open(filename, 'w') as writeFile:
         writeFile.write(output.getvalue())
+
+    print(f"Output written to {filename}")
