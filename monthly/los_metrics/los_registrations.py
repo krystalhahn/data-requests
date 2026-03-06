@@ -11,7 +11,7 @@ def get_all_registrations_for_los():
     from osf.models import Identifier, OutcomeArtifact
     from tqdm import tqdm
     filename = '/tmp/all_registrations_for_los.csv'
-    COL_HEADERS = ['reg_guid', 'author_guid', 'is_public', 'is_deleted', 'date_registered', 'moderation_state', 'retraction_state', 'spam_status', 
+    COL_HEADERS = ['reg_guid', 'author_guid', 'is_public', 'is_deleted', 'date_created', 'date_registered', 'moderation_state', 'retraction_state', 'spam_status', 
                    'registry', 'template', 'connected_outputs', 'institution', 'subject', 'subject_parent', 'funder', 'funder_identifier', 'funder_identifier_type']
     output = io.StringIO()
     writer = csv.DictWriter(output, COL_HEADERS)
@@ -47,6 +47,7 @@ def get_all_registrations_for_los():
             'reg_guid': reg._id,
             'is_public': reg.is_public,
             'is_deleted': reg.deleted is not None,
+            'date_created': reg.created,
             'date_registered': reg.registered_date.date().isoformat(),
             'moderation_state': reg.moderation_state,
             'retraction_state': reg.retraction.state if reg.retraction else None,
