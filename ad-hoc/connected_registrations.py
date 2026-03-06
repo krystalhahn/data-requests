@@ -89,6 +89,8 @@ def get_metadata_objects(n=None):
     with open(filename, 'w') as writeFile:
         writeFile.write(output.getvalue())
 
+    print(f"Output written to {filename}")
+
 
 # if no associated GuidMetadataRecord object, just get connected resources
 # batched version because runtime was too long
@@ -160,3 +162,5 @@ def get_connected_reg(n=None):
         
     with open(filename, 'w') as writeFile:
         writeFile.write(output.getvalue())
+
+    print(f"Output written to {filename}")
