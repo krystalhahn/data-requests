@@ -10,6 +10,7 @@ def get_all_registrations_for_los():
     from osf.utils.outcomes import ArtifactTypes
     from osf.models import Identifier, OutcomeArtifact
     from tqdm import tqdm
+    import json
     filename = '/tmp/all_registrations_for_los.csv'
     COL_HEADERS = ['reg_guid', 'author_guid', 'is_public', 'is_deleted', 'date_created', 'date_registered', 'moderation_state', 'retraction_state', 'spam_status', 
                    'registry', 'template', 'connected_outputs', 'institution', 'subject', 'subject_parent', 'funder', 'funder_identifier', 'funder_identifier_type']
@@ -56,12 +57,12 @@ def get_all_registrations_for_los():
             'registry': reg.provider._id,
             'template': reg.registered_schema.all()[0].name,
             'connected_outputs': connected_resources,
-            'institution': list(reg.affiliated_institutions.values_list('name', flat=True)) if hasattr(reg, 'affiliated_institutions') else [],
-            'subject': list(reg.subjects.filter(parent_id__isnull=False).values_list('text', flat=True)) if hasattr(reg, 'subjects') else [],
-            'subject_parent': list(reg.subjects.filter(parent_id__isnull=True).values_list('text', flat=True)) if hasattr(reg, 'subjects') else [],
-            'funder': funders,
-            'funder_identifier': funder_identifiers,
-            'funder_identifier_type': funder_identifier_types,
+            'institution': json.dumps(list(reg.affiliated_institutions.values_list('name', flat=True)) if hasattr(reg, 'affiliated_institutions') else []),
+            'subject': json.dumps(list(reg.subjects.filter(parent_id__isnull=False).values_list('text', flat=True)) if hasattr(reg, 'subjects') else []),
+            'subject_parent': json.dumps(list(reg.subjects.filter(parent_id__isnull=True).values_list('text', flat=True)) if hasattr(reg, 'subjects') else []),
+            'funder': json.dumps(funders) if funders else None,
+            'funder_identifier': json.dumps(funder_identifiers) if funder_identifiers else None,
+            'funder_identifier_type': json.dumps(funder_identifier_types) if funder_identifier_types else None,
         })
         pbar.update()
 
