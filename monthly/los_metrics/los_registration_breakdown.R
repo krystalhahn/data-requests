@@ -62,7 +62,14 @@ public_reg_funder <- public_reg %>%
   mutate(funder = str_extract_all(funder, "[^\\[\\]',]+")) %>%
   unnest(funder) %>%
   mutate(funder = str_trim(funder)) %>%
-  count(funder, sort = TRUE)
+  group_by(funder) %>%
+  summarize(total = n(),
+            LOS = sum(is_los),
+            LOS_pct = pct(is_los),
+            w_outputs = sum(has_output),
+            outputs_pct = pct(has_output),
+            w_outcomes = sum(has_outcome),
+            outcomes_pct = pct(has_outcome))
 
 # top-level subject
 public_reg_subject <- public_reg %>%
