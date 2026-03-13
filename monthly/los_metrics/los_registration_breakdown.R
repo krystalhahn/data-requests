@@ -23,6 +23,16 @@ public_reg <- all_reg %>%
          has_outcome = str_detect(connected_outputs, "PAPERS")) %>%
   mutate(is_los = has_output & has_outcome)
 
+pct <- function(x) round(mean(x) * 100, 1)
+public_reg_overall <- public_reg %>%
+  summarize(total = n(),
+            LOS = sum(is_los),
+            LOS_pct = pct(is_los),
+            w_outputs = sum(has_output),
+            outputs_pct = pct(has_output),
+            w_outcomes = sum(has_outcome),
+            outcomes_pct = pct(has_outcome))
+
 table(public_reg$has_output)
 table(public_reg$has_outcome)
 table(public_reg$is_los)
