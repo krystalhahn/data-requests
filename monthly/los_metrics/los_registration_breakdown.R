@@ -46,7 +46,14 @@ public_reg_inst <- public_reg %>%
   mutate(institution = str_extract_all(institution, "[^\\[\\]',]+")) %>%
   unnest(institution) %>%
   mutate(institution = str_trim(institution)) %>%
-  count(institution, sort = TRUE)
+  group_by(institution) %>%
+  summarize(total = n(),
+            LOS = sum(is_los),
+            LOS_pct = pct(is_los),
+            w_outputs = sum(has_output),
+            outputs_pct = pct(has_output),
+            w_outcomes = sum(has_outcome),
+            outcomes_pct = pct(has_outcome))
 
 # funder represented in metadata
 table(is.na(public_reg$funder))
