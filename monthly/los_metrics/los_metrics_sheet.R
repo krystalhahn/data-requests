@@ -32,7 +32,9 @@ public_reg_overall <- public_reg %>%
             outcomes_n = sum(has_outcome),
             outcomes_pct = pct(has_outcome),
             LOS_n = sum(is_los),
-            LOS_pct = pct(is_los))
+            LOS_pct = pct(is_los)) %>%
+  mutate(across(ends_with("_pct"), ~ paste0(.x, "%"))) %>%
+  mutate(across(where(is.numeric), as.character))
 
 write_sheet(public_reg_overall, los_sheet_url, "Overall")
 
@@ -51,7 +53,9 @@ public_reg_affiliated <- public_reg %>%
             outcomes_n = sum(has_outcome),
             outcomes_pct = pct(has_outcome),
             LOS_n = sum(is_los),
-            LOS_pct = pct(is_los))
+            LOS_pct = pct(is_los)) %>%
+  mutate(across(ends_with("_pct"), ~ paste0(.x, "%"))) %>%
+  mutate(across(where(is.numeric), as.character))
 
 write_sheet(public_reg_affiliated, los_sheet_url, "Affiliated")
 
@@ -72,7 +76,9 @@ public_reg_institution <- public_reg %>%
             outcomes_n = sum(has_outcome),
             outcomes_pct = pct(has_outcome),
             LOS_n = sum(is_los),
-            LOS_pct = pct(is_los))
+            LOS_pct = pct(is_los)) %>%
+  mutate(across(ends_with("_pct"), ~ paste0(.x, "%"))) %>%
+  mutate(across(where(is.numeric), as.character))
 
 write_sheet(public_reg_institution, los_sheet_url, "Institution")
 
@@ -91,7 +97,9 @@ public_reg_funded <- public_reg %>%
             outcomes_n = sum(has_outcome),
             outcomes_pct = pct(has_outcome),
             LOS_n = sum(is_los),
-            LOS_pct = pct(is_los))
+            LOS_pct = pct(is_los)) %>%
+  mutate(across(ends_with("_pct"), ~ paste0(.x, "%"))) %>%
+  mutate(across(where(is.numeric), as.character))
 
 write_sheet(public_reg_funded, los_sheet_url, "Funded")
 
@@ -112,7 +120,9 @@ public_reg_funder <- public_reg %>%
             outcomes_n = sum(has_outcome),
             outcomes_pct = pct(has_outcome),
             LOS_n = sum(is_los),
-            LOS_pct = pct(is_los))
+            LOS_pct = pct(is_los)) %>%
+  mutate(across(ends_with("_pct"), ~ paste0(.x, "%"))) %>%
+  mutate(across(where(is.numeric), as.character))
 
 write_sheet(public_reg_funder, los_sheet_url, "Funder")
 
@@ -126,7 +136,9 @@ public_reg_template <- public_reg %>%
             outcomes_n = sum(has_outcome),
             outcomes_pct = pct(has_outcome),
             LOS_n = sum(is_los),
-            LOS_pct = pct(is_los))
+            LOS_pct = pct(is_los)) %>%
+  mutate(across(ends_with("_pct"), ~ paste0(.x, "%"))) %>%
+  mutate(across(where(is.numeric), as.character))
 
 write_sheet(public_reg_template, los_sheet_url, "Template")
 
@@ -140,7 +152,9 @@ public_reg_registry <- public_reg %>%
             outcomes_n = sum(has_outcome),
             outcomes_pct = pct(has_outcome),
             LOS_n = sum(is_los),
-            LOS_pct = pct(is_los))
+            LOS_pct = pct(is_los)) %>%
+  mutate(across(ends_with("_pct"), ~ paste0(.x, "%"))) %>%
+  mutate(across(where(is.numeric), as.character))
 
 write_sheet(public_reg_registry, los_sheet_url, "Registry")
 
@@ -161,7 +175,9 @@ public_reg_subject_parent <- public_reg %>%
             outcomes_n = sum(has_outcome),
             outcomes_pct = pct(has_outcome),
             LOS_n = sum(is_los),
-            LOS_pct = pct(is_los))
+            LOS_pct = pct(is_los)) %>%
+  mutate(across(ends_with("_pct"), ~ paste0(.x, "%"))) %>%
+  mutate(across(where(is.numeric), as.character))
 
 write_sheet(public_reg_subject_parent, los_sheet_url, "Top-level Subject")
 
@@ -181,7 +197,9 @@ public_reg_subject <- public_reg %>%
             outcomes_n = sum(has_outcome),
             outcomes_pct = pct(has_outcome),
             LOS_n = sum(is_los),
-            LOS_pct = pct(is_los))
+            LOS_pct = pct(is_los)) %>%
+  mutate(across(ends_with("_pct"), ~ paste0(.x, "%"))) %>%
+  mutate(across(where(is.numeric), as.character))
 
 write_sheet(public_reg_subject, los_sheet_url, "Lower-level subject")
 
