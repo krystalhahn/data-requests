@@ -185,7 +185,10 @@ public_reg_subject <- public_reg %>%
 
 write_sheet(public_reg_subject, los_sheet_url, "Lower-level subject")
 
-## Master sheet with longitudinal long data
+## Master sheet with longitudinal long data ----
+
+### To create current month's Master sheet ----
+
 public_reg_overall_long <- public_reg_overall %>%
   pivot_longer(cols = everything(),
                names_to = "metric",
@@ -271,3 +274,16 @@ los_metrics_long <- bind_rows(
 )
 
 write_sheet(los_metrics_long, los_sheet_url, sheet = "Master")
+
+### To update sheet after initial creation with new month's metrics ----
+
+current_sheet <- read_sheet(los_sheet_url, sheet = "Master")
+next_col <- ncol(current_sheet) + 1
+
+range_write(los_sheet_url, 
+            data = as.data.frame(los_metrics_long$value), 
+            sheet = "Master",
+            range = cell_cols(next_col),
+            col_names = TRUE)
+
+# will modify to handle when there are new institutions, funders, etc.
