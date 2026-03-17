@@ -118,7 +118,7 @@ write_sheet(public_reg_funder, los_sheet_url, "Funder")
 
 ### Template ----
 
-dr_public_reg_template <- public_reg %>%
+public_reg_template <- public_reg %>%
   group_by(template) %>%
   summarize(total = n(),
             LOS_n = sum(is_los),
@@ -184,3 +184,90 @@ public_reg_subject <- public_reg %>%
             outcomes_pct = pct(has_outcome))
 
 write_sheet(public_reg_subject, los_sheet_url, "Lower-level subject")
+
+## Master sheet with longitudinal long data
+public_reg_overall_long <- public_reg_overall %>%
+  pivot_longer(cols = everything(),
+               names_to = "metric",
+               values_to = "value") %>%
+  mutate(dimension = "overall",
+         attribute = NA) %>%
+  select(metric, dimension, attribute, value)
+
+public_reg_affiliated_long <- public_reg_affiliated %>%
+  pivot_longer(cols = -"affiliated",
+               names_to = "metric",
+               values_to = "value") %>%
+  mutate(dimension = "affiliated") %>%
+  rename(attribute = affiliated) %>%
+  select(metric, dimension, attribute, value)
+
+public_reg_institution_long <- public_reg_institution %>%
+  pivot_longer(cols = -"institution",
+               names_to = "metric",
+               values_to = "value") %>%
+  mutate(dimension = "institution") %>%
+  rename(attribute = institution) %>%
+  select(metric, dimension, attribute, value)
+
+public_reg_funded_long <- public_reg_funded %>%
+  pivot_longer(cols = -"funded",
+               names_to = "metric",
+               values_to = "value") %>%
+  mutate(dimension = "funded") %>%
+  rename(attribute = funded) %>%
+  select(metric, dimension, attribute, value)
+
+public_reg_funder_long <- public_reg_funder %>%
+  pivot_longer(cols = -"funder",
+               names_to = "metric",
+               values_to = "value") %>%
+  mutate(dimension = "funder") %>%
+  rename(attribute = funder) %>%
+  select(metric, dimension, attribute, value)
+
+public_reg_template_long <- public_reg_template %>%
+  pivot_longer(cols = -"template",
+               names_to = "metric",
+               values_to = "value") %>%
+  mutate(dimension = "template") %>%
+  rename(attribute = template) %>%
+  select(metric, dimension, attribute, value)
+
+public_reg_registry_long <- public_reg_registry %>%
+  pivot_longer(cols = -"registry",
+               names_to = "metric",
+               values_to = "value") %>%
+  mutate(dimension = "registry") %>%
+  rename(attribute = registry) %>%
+  select(metric, dimension, attribute, value)
+
+public_reg_subject_parent_long <- public_reg_subject_parent %>%
+  pivot_longer(cols = -"subject_parent",
+               names_to = "metric",
+               values_to = "value") %>%
+  mutate(dimension = "top-level subject") %>%
+  rename(attribute = subject_parent) %>% 
+  select(metric, dimension, attribute, value)
+
+public_reg_subject_long <- public_reg_subject %>%
+  pivot_longer(cols = -"subject",
+               names_to = "metric",
+               values_to = "value") %>%
+  mutate(dimension = "lower-level subject") %>%
+  rename(attribute = subject) %>%
+  select(metric, dimension, attribute, value)
+
+los_metrics_long <- bind_rows(
+  public_reg_overall_long,
+  public_reg_affiliated_long,
+  public_reg_institution_long,
+  public_reg_funded_long,
+  public_reg_funder_long,
+  public_reg_template_long,
+  public_reg_registry_long,
+  public_reg_subject_parent_long,
+  public_reg_subject_long
+)
+
+write_sheet(los_metrics_long, los_sheet_url, sheet = "Master")
