@@ -211,9 +211,13 @@ public_reg_overall_long <- public_reg_overall %>%
   pivot_longer(cols = everything(),
                names_to = "metric",
                values_to = "value") %>%
-  mutate(dimension = "overall",
+  mutate(measure = case_when(str_detect(metric, "_n") ~ "count",
+                             str_detect(metric, "_pct") ~ "percentage",
+                             .default = NA),
+         metric = str_remove(metric, "_(n|pct)$"),
+         dimension = "overall",
          attribute = NA) %>%
-  select(metric, dimension, attribute, value)
+  select(metric, dimension, measure, attribute, value)
 
 public_reg_affiliated_long <- public_reg_affiliated %>%
   pivot_longer(cols = -"affiliated",
