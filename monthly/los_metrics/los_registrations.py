@@ -54,7 +54,7 @@ def get_all_registrations_for_los():
             'retraction_state': reg.retraction.state if reg.retraction else None,
             'spam_status': reg.spam_status,
             'author_guid': reg.creator._id,
-            'registry': reg.provider._id,
+            'registry': reg.provider.name,
             'template': reg.registered_schema.all()[0].name,
             'connected_outputs': connected_resources,
             'institution': json.dumps(list(reg.affiliated_institutions.values_list('name', flat=True)) if hasattr(reg, 'affiliated_institutions') else []),
