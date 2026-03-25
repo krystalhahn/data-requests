@@ -86,7 +86,7 @@ write_sheet(public_reg_institution, los_sheet_url, "Institution")
 
 current_funders <- read_sheet(los_sheet_url, "Funder")
 
-public_reg_funded <- public_reg %>%
+test <- apublic_reg_deleted_resources %>%
   mutate(funder = map(funder, ~ {
     if (is.na(.x)) return(NA_character_)
     result <- fromJSON(.x)
@@ -110,10 +110,6 @@ public_reg_funded <- public_reg %>%
     is_new                  ~ "New funders",
     is_existing             ~ "Existing funders"
   )) %>%
-  { if (!any(.$funded == "New funders", na.rm = TRUE))
-    bind_rows(., tibble(funded = "New funders", has_output = 0, 
-                        has_outcome = 0, is_los = 0))
-    else . } %>%
   bind_rows(filter(., funded != "Unfunded") %>% 
               mutate(funded = "Funded")) %>%
   group_by(funded) %>%
@@ -128,6 +124,17 @@ public_reg_funded <- public_reg %>%
   mutate(across(where(is.numeric), as.character)) %>%
   mutate(funded = factor(funded, levels = c("Funded", "New funders", "Existing funders", "Unfunded"))) %>%
   arrange(funded)
+
+# if there are no new funders in the current month
+
+if (!"New funders" %in% public_reg_funded$funded) {
+  public_reg_funded <- public_reg_funded %>%
+    bind_rows(tibble(funded = "New funders", total = "0", outputs_n = "0",
+                     outputs_pct = "0%", outcomes_n = "0", outcomes_pct = "0%",
+                     LOS_n = "0", LOS_pct = "0%")) %>%
+    mutate(funded = factor(funded, levels = c("Funded", "New funders", "Existing funders", "Unfunded"))) %>%
+    arrange(funded)
+}
 
 write_sheet(public_reg_funded, los_sheet_url, "Funded")
 
