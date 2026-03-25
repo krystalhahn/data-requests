@@ -145,7 +145,14 @@ public_reg_funder <- public_reg %>%
             LOS_n = sum(is_los),
             LOS_pct = pct(is_los)) %>%
   mutate(across(ends_with("_pct"), ~ paste0(.x, "%"))) %>%
-  mutate(across(where(is.numeric), as.character))
+  mutate(across(where(is.numeric), as.character)) %>%
+  mutate(
+    funder_type = case_when(
+      !funder %in% current_funder$funder & funder != "Unfunded" ~ "new",
+      funder %in% current_funder$funder & funder != "Unfunded" ~ "existing",
+      funder == "Unfunded" ~ "unfunded"
+    )) %>%
+  select(funder, funder_type, everything())
 
 write_sheet(public_reg_funder, los_sheet_url, "Funder")
 
