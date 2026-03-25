@@ -84,6 +84,8 @@ write_sheet(public_reg_institution, los_sheet_url, "Institution")
 
 ### Funded ----
 
+current_funders <- read_sheet(los_sheet_url, "Funder")
+
 public_reg_funded <- public_reg %>%
   mutate(funder = map(funder, ~ {
     if (is.na(.x)) return(NA_character_)
@@ -95,8 +97,8 @@ public_reg_funded <- public_reg %>%
   group_by(reg_guid) %>%
   summarize(
     # a registration is "new" if ANY of its funders are new
-    is_new = any(!funder %in% current_funder$funder & funder != "Unfunded"),
-    is_existing = any(funder %in% current_funder$funder & funder != "Unfunded"),
+    is_new = any(!funder %in% current_funders$funder & funder != "Unfunded"),
+    is_existing = any(funder %in% current_funders$funder & funder != "Unfunded"),
     is_unfunded = all(funder == "Unfunded"),
     # carry through the metrics - take first value since they're the same per reg
     has_output = first(has_output),
@@ -148,8 +150,8 @@ public_reg_funder <- public_reg %>%
   mutate(across(where(is.numeric), as.character)) %>%
   mutate(
     funder_type = case_when(
-      !funder %in% current_funder$funder & funder != "Unfunded" ~ "new",
-      funder %in% current_funder$funder & funder != "Unfunded" ~ "existing",
+      !funder %in% current_funders$funder & funder != "Unfunded" ~ "new",
+      funder %in% current_funders$funder & funder != "Unfunded" ~ "existing",
       funder == "Unfunded" ~ "unfunded"
     )) %>%
   select(funder, funder_type, everything())
