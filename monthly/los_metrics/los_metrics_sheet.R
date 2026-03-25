@@ -86,7 +86,7 @@ write_sheet(public_reg_institution, los_sheet_url, "Institution")
 
 current_funders <- read_sheet(los_sheet_url, "Funder")
 
-test <- apublic_reg_deleted_resources %>%
+public_reg_funded <- public_reg %>%
   mutate(funder = map(funder, ~ {
     if (is.na(.x)) return(NA_character_)
     result <- fromJSON(.x)
