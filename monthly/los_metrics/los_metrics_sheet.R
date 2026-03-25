@@ -110,8 +110,11 @@ public_reg_funded <- public_reg %>%
     is_new                  ~ "New funders",
     is_existing             ~ "Existing funders"
   )) %>%
-  bind_rows(funded_classified %>% 
-              filter(funded != "Unfunded") %>% 
+  { if (!any(.$funded == "New funders", na.rm = TRUE))
+    bind_rows(., tibble(funded = "New funders", has_output = 0, 
+                        has_outcome = 0, is_los = 0))
+    else . } %>%
+  bind_rows(filter(., funded != "Unfunded") %>% 
               mutate(funded = "Funded")) %>%
   group_by(funded) %>%
   summarize(total = n(),
