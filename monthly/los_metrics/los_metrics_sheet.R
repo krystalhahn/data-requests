@@ -190,6 +190,22 @@ public_reg_registry <- public_reg %>%
 
 write_sheet(public_reg_registry, los_sheet_url, "Registry")
 
+
+### Template-Registry pairs ----
+public_reg_template_registry <- apublic_reg_deleted_resources %>%
+  group_by(template, registry) %>%
+  summarize(total = n(),
+            outputs_n = sum(has_output),
+            outputs_pct = pct(has_output),
+            outcomes_n = sum(has_outcome),
+            outcomes_pct = pct(has_outcome),
+            LOS_n = sum(is_los),
+            LOS_pct = pct(is_los)) %>%
+  mutate(across(ends_with("_pct"), ~ paste0(.x, "%"))) %>%
+  mutate(across(where(is.numeric), as.character))
+
+write_sheet(public_reg_template_registry, los_sheet_url, "Template-Registry pair")
+
 ### Top-level Subject ----
 
 public_reg_subject_parent <- public_reg %>%
