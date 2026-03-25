@@ -107,7 +107,22 @@ public_reg_funded <- public_reg %>%
     is_unfunded             ~ "Unfunded",
     is_new                  ~ "New funders",
     is_existing             ~ "Existing funders"
-  ))
+  )) %>%
+  bind_rows(funded_classified %>% 
+              filter(funded != "Unfunded") %>% 
+              mutate(funded = "Funded")) %>%
+  group_by(funded) %>%
+  summarize(total = n(),
+            outputs_n = sum(has_output),
+            outputs_pct = pct(has_output),
+            outcomes_n = sum(has_outcome),
+            outcomes_pct = pct(has_outcome),
+            LOS_n = sum(is_los),
+            LOS_pct = pct(is_los)) %>%
+  mutate(across(ends_with("_pct"), ~ paste0(.x, "%"))) %>%
+  mutate(across(where(is.numeric), as.character)) %>%
+  mutate(funded = factor(funded, levels = c("Funded", "New funders", "Existing funders", "Unfunded"))) %>%
+  arrange(funded)
 
 write_sheet(public_reg_funded, los_sheet_url, "Funded")
 
