@@ -188,126 +188,44 @@ write_sheet(public_reg_subject, los_sheet_url, "Lower-level subject")
 
 ### To create current month's Master sheet ----
 
-public_reg_overall_long <- public_reg_overall %>%
-  pivot_longer(cols = everything(),
-               names_to = "metric",
-               values_to = "value") %>%
-  mutate(measure = case_when(str_detect(metric, "_n") ~ "count",
-                             str_detect(metric, "_pct") ~ "percentage",
-                             .default = NA),
-         metric = str_remove(metric, "_(n|pct)$"),
-         dimension = "overall",
-         attribute = NA) %>%
-  select(dimension, metric, measure, attribute, value)
+# helper function for reshaping data for longitudinal dataset
+reshape_data <- function(df, dimension_name, grouping_variables = character(0)) {
+  df %>%
+    pivot_longer(cols = -any_of(grouping_variables),
+                 names_to = "metric",
+                 values_to = "value") %>%
+    { if (length(grouping_variables) >= 1) rename(., attribute = all_of(grouping_variables[1])) else . } %>%
+    { if (length(grouping_variables) >= 2) rename(., additional_attribute = all_of(grouping_variables[2])) else . } %>%
+    mutate(measure = case_when(str_detect(metric, "_n$")   ~ "count",
+                               str_detect(metric, "_pct$") ~ "percentage",
+                               metric == "total"           ~ "count",
+                               .default = NA),
+           metric = str_remove(metric, "_(n|pct)$"),
+           dimension = dimension_name,
+           attribute = if ("attribute" %in% names(.)) attribute else NA,
+           additional_attribute = if ("additional_attribute" %in% names(.)) additional_attribute else NA) %>%
+    select(dimension, metric, measure, attribute, additional_attribute, value)
+}
 
-public_reg_affiliated_long <- public_reg_affiliated %>%
-  pivot_longer(cols = -"affiliated",
-               names_to = "metric",
-               values_to = "value") %>%
-  mutate(measure = case_when(str_detect(metric, "_n") ~ "count",
-                             str_detect(metric, "_pct") ~ "percentage",
-                             metric == "total" ~ "count"),
-         metric = str_remove(metric, "_(n|pct)$"),
-         dimension = "affiliated") %>%
-  rename(attribute = affiliated) %>%
-  select(dimension, metric, measure, attribute, value)
+public_reg_overall_long <- public_reg_overall %>% reshape_data("overall")
 
-public_reg_institution_long <- public_reg_institution %>%
-  pivot_longer(cols = -"institution",
-               names_to = "metric",
-               values_to = "value") %>%
-  mutate(measure = case_when(str_detect(metric, "_n") ~ "count",
-                             str_detect(metric, "_pct") ~ "percentage",
-                             metric == "total" ~ "count"),
-         metric = str_remove(metric, "_(n|pct)$"),
-         dimension = "institution") %>%
-  rename(attribute = institution) %>%
-  select(dimension, metric, measure, attribute, value)
+public_reg_affiliated_long <- public_reg_affiliated %>% reshape_data("affiliated", "affiliated")
 
-public_reg_funded_long <- public_reg_funded %>%
-  pivot_longer(cols = -"funded",
-               names_to = "metric",
-               values_to = "value") %>%
-  mutate(measure = case_when(str_detect(metric, "_n") ~ "count",
-                             str_detect(metric, "_pct") ~ "percentage",
-                             metric == "total" ~ "count"),
-         metric = str_remove(metric, "_(n|pct)$"),
-         dimension = "funded") %>%
-  rename(attribute = funded) %>%
-  select(dimension, metric, measure, attribute, value)
+public_reg_institution_long <- public_reg_institution %>% reshape_data("institution", "institution")
 
-public_reg_funder_long <- public_reg_funder %>%
-  pivot_longer(cols = -"funder",
-               names_to = "metric",
-               values_to = "value") %>%
-  mutate(measure = case_when(str_detect(metric, "_n") ~ "count",
-                             str_detect(metric, "_pct") ~ "percentage",
-                             metric == "total" ~ "count"),
-         metric = str_remove(metric, "_(n|pct)$"),
-         dimension = "funder") %>%
-  rename(attribute = funder) %>%
-  select(dimension, metric, measure, attribute, value)
+public_reg_funded_long <- public_reg_funded %>% reshape_data("funded", "funded")
 
-public_reg_template_long <- public_reg_template %>%
-  pivot_longer(cols = -"template",
-               names_to = "metric",
-               values_to = "value") %>%
-  mutate(measure = case_when(str_detect(metric, "_n") ~ "count",
-                             str_detect(metric, "_pct") ~ "percentage",
-                             metric == "total" ~ "count"),
-         metric = str_remove(metric, "_(n|pct)$"),
-         dimension = "template") %>%
-  rename(attribute = template) %>%
-  select(dimension, metric, measure, attribute, value)
+public_reg_funder_long <- public_reg_funder %>% reshape_data("funder", "funder")
 
-public_reg_registry_long <- public_reg_registry %>%
-  pivot_longer(cols = -"registry",
-               names_to = "metric",
-               values_to = "value") %>%
-  mutate(measure = case_when(str_detect(metric, "_n") ~ "count",
-                             str_detect(metric, "_pct") ~ "percentage",
-                             metric == "total" ~ "count"),
-         metric = str_remove(metric, "_(n|pct)$"),
-         dimension = "registry") %>%
-  rename(attribute = registry) %>%
-  select(dimension, metric, measure, attribute, value)
+public_reg_template_long <- public_reg_template %>% reshape_data("template", "template")
 
-public_reg_template_registry_long <- public_reg_template_registry %>%
-  pivot_longer(cols = -c("template", "registry"),
-               names_to = "metric",
-               values_to = "value") %>%
-  mutate(measure = case_when(str_detect(metric, "_n") ~ "count",
-                             str_detect(metric, "_pct") ~ "percentage",
-                             metric == "total" ~ "count"),
-         metric = str_remove(metric, "_(n|pct)$"),
-         dimension = "template-registry pair") %>%
-  rename(attribute = template,
-         additional_attribute = registry) %>%
-  select(dimension, metric, measure, attribute, additional_attribute, value)
+public_reg_registry_long <- public_reg_registry %>% reshape_data("registry", "registry")
 
-public_reg_subject_parent_long <- public_reg_subject_parent %>%
-  pivot_longer(cols = -"subject_parent",
-               names_to = "metric",
-               values_to = "value") %>%
-  mutate(measure = case_when(str_detect(metric, "_n") ~ "count",
-                             str_detect(metric, "_pct") ~ "percentage",
-                             metric == "total" ~ "count"),
-         metric = str_remove(metric, "_(n|pct)$"),
-         dimension = "top-level subject") %>%
-  rename(attribute = subject_parent) %>% 
-  select(dimension, metric, measure, attribute, value)
+public_reg_template_registry_long <- public_reg_template_registry %>% reshape_data("template-registry pair", c("template", "registry"))
 
-public_reg_subject_long <- public_reg_subject %>%
-  pivot_longer(cols = -"subject",
-               names_to = "metric",
-               values_to = "value") %>%
-  mutate(measure = case_when(str_detect(metric, "_n") ~ "count",
-                             str_detect(metric, "_pct") ~ "percentage",
-                             metric == "total" ~ "count"),
-         metric = str_remove(metric, "_(n|pct)$"),
-         dimension = "lower-level subject") %>%
-  rename(attribute = subject) %>%
-  select(dimension, metric, measure, attribute, value)
+public_reg_subject_parent_long <- public_reg_subject_parent %>% reshape_data("top-level subject", "subject_parent")
+
+public_reg_subject_long <- public_reg_subject %>% reshape_data("lower-level subject", "subject")
 
 los_metrics_long <- bind_rows(
   public_reg_overall_long,
