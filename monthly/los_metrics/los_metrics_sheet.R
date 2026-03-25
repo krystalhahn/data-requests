@@ -22,19 +22,26 @@ public_reg <- all_reg %>%
 ## Current attribute sheets ----
 # not longitudinal
 
+# helper function for summarizing LOS metrics
 pct <- function(x) round(mean(x) * 100, 1)
 
+summarize_metrics <- function(df, ...) {
+  df %>%
+    group_by(...) %>%
+    summarize(total = n(),
+              outputs_n = sum(has_output),
+              outputs_pct = pct(has_output),
+              outcomes_n = sum(has_outcome),
+              outcomes_pct = pct(has_outcome),
+              LOS_n = sum(is_los),
+              LOS_pct = pct(is_los),
+              .groups = "drop") %>%
+    mutate(across(ends_with("_pct"), ~ paste0(.x, "%"))) %>%
+    mutate(across(where(is.numeric), as.character))
+}
+
 ### Overall ----
-public_reg_overall <- public_reg %>%
-  summarize(total = n(),
-            outputs_n = sum(has_output),
-            outputs_pct = pct(has_output),
-            outcomes_n = sum(has_outcome),
-            outcomes_pct = pct(has_outcome),
-            LOS_n = sum(is_los),
-            LOS_pct = pct(is_los)) %>%
-  mutate(across(ends_with("_pct"), ~ paste0(.x, "%"))) %>%
-  mutate(across(where(is.numeric), as.character))
+public_reg_overall <- public_reg %>% summarize_metrics()
 
 write_sheet(public_reg_overall, los_sheet_url, "Overall")
 
@@ -46,16 +53,7 @@ public_reg_affiliated <- public_reg %>%
     result <- fromJSON(.x)
     if (length(result) == 0) "Unaffiliated" else "Affiliated"
   })) %>%
-  group_by(affiliated) %>%
-  summarize(total = n(),
-            outputs_n = sum(has_output),
-            outputs_pct = pct(has_output),
-            outcomes_n = sum(has_outcome),
-            outcomes_pct = pct(has_outcome),
-            LOS_n = sum(is_los),
-            LOS_pct = pct(is_los)) %>%
-  mutate(across(ends_with("_pct"), ~ paste0(.x, "%"))) %>%
-  mutate(across(where(is.numeric), as.character))
+  summarize_metrics(affiliated)
 
 write_sheet(public_reg_affiliated, los_sheet_url, "Affiliated")
 
@@ -69,16 +67,7 @@ public_reg_institution <- public_reg %>%
   })) %>%
   unnest(institution) %>%
   mutate(institution = if_else(is.na(institution), "Unaffiliated", institution)) %>%
-  group_by(institution) %>%
-  summarize(total = n(),
-            outputs_n = sum(has_output),
-            outputs_pct = pct(has_output),
-            outcomes_n = sum(has_outcome),
-            outcomes_pct = pct(has_outcome),
-            LOS_n = sum(is_los),
-            LOS_pct = pct(is_los)) %>%
-  mutate(across(ends_with("_pct"), ~ paste0(.x, "%"))) %>%
-  mutate(across(where(is.numeric), as.character))
+  summarize_metrics(institution)
 
 write_sheet(public_reg_institution, los_sheet_url, "Institution")
 
@@ -112,16 +101,7 @@ public_reg_funded <- public_reg %>%
   )) %>%
   bind_rows(filter(., funded != "Unfunded") %>% 
               mutate(funded = "Funded")) %>%
-  group_by(funded) %>%
-  summarize(total = n(),
-            outputs_n = sum(has_output),
-            outputs_pct = pct(has_output),
-            outcomes_n = sum(has_outcome),
-            outcomes_pct = pct(has_outcome),
-            LOS_n = sum(is_los),
-            LOS_pct = pct(is_los)) %>%
-  mutate(across(ends_with("_pct"), ~ paste0(.x, "%"))) %>%
-  mutate(across(where(is.numeric), as.character)) %>%
+  summarize_metrics(funded) %>%
   mutate(funded = factor(funded, levels = c("Funded", "New funders", "Existing funders", "Unfunded"))) %>%
   arrange(funded)
 
@@ -148,16 +128,7 @@ public_reg_funder <- public_reg %>%
   })) %>%
   unnest(funder) %>%
   mutate(funder = if_else(is.na(funder), "Unfunded", funder)) %>%
-  group_by(funder) %>%
-  summarize(total = n(),
-            outputs_n = sum(has_output),
-            outputs_pct = pct(has_output),
-            outcomes_n = sum(has_outcome),
-            outcomes_pct = pct(has_outcome),
-            LOS_n = sum(is_los),
-            LOS_pct = pct(is_los)) %>%
-  mutate(across(ends_with("_pct"), ~ paste0(.x, "%"))) %>%
-  mutate(across(where(is.numeric), as.character)) %>%
+  summarize_metrics(funder) %>%
   mutate(
     funder_type = case_when(
       !funder %in% current_funders$funder & funder != "Unfunded" ~ "new",
@@ -170,49 +141,19 @@ write_sheet(public_reg_funder, los_sheet_url, "Funder")
 
 ### Template ----
 
-public_reg_template <- public_reg %>%
-  group_by(template) %>%
-  summarize(total = n(),
-            outputs_n = sum(has_output),
-            outputs_pct = pct(has_output),
-            outcomes_n = sum(has_outcome),
-            outcomes_pct = pct(has_outcome),
-            LOS_n = sum(is_los),
-            LOS_pct = pct(is_los)) %>%
-  mutate(across(ends_with("_pct"), ~ paste0(.x, "%"))) %>%
-  mutate(across(where(is.numeric), as.character))
+public_reg_template <- public_reg %>% summarize_metrics(template)
 
 write_sheet(public_reg_template, los_sheet_url, "Template")
 
 ### Registry ----
 
-public_reg_registry <- public_reg %>%
-  group_by(registry) %>%
-  summarize(total = n(),
-            outputs_n = sum(has_output),
-            outputs_pct = pct(has_output),
-            outcomes_n = sum(has_outcome),
-            outcomes_pct = pct(has_outcome),
-            LOS_n = sum(is_los),
-            LOS_pct = pct(is_los)) %>%
-  mutate(across(ends_with("_pct"), ~ paste0(.x, "%"))) %>%
-  mutate(across(where(is.numeric), as.character))
+public_reg_registry <- public_reg %>% summarize_metrics(registry)
 
 write_sheet(public_reg_registry, los_sheet_url, "Registry")
 
 
 ### Template-Registry pairs ----
-public_reg_template_registry <- apublic_reg_deleted_resources %>%
-  group_by(template, registry) %>%
-  summarize(total = n(),
-            outputs_n = sum(has_output),
-            outputs_pct = pct(has_output),
-            outcomes_n = sum(has_outcome),
-            outcomes_pct = pct(has_outcome),
-            LOS_n = sum(is_los),
-            LOS_pct = pct(is_los)) %>%
-  mutate(across(ends_with("_pct"), ~ paste0(.x, "%"))) %>%
-  mutate(across(where(is.numeric), as.character))
+public_reg_template_registry <- public_reg %>% summarize_metrics(template, registry)
 
 write_sheet(public_reg_template_registry, los_sheet_url, "Template-Registry pair")
 
@@ -226,16 +167,7 @@ public_reg_subject_parent <- public_reg %>%
   })) %>%
   unnest(subject_parent) %>%
   mutate(subject_parent = if_else(is.na(subject_parent), "No subject", subject_parent)) %>%
-  group_by(subject_parent) %>%
-  summarize(total = n(),
-            outputs_n = sum(has_output),
-            outputs_pct = pct(has_output),
-            outcomes_n = sum(has_outcome),
-            outcomes_pct = pct(has_outcome),
-            LOS_n = sum(is_los),
-            LOS_pct = pct(is_los)) %>%
-  mutate(across(ends_with("_pct"), ~ paste0(.x, "%"))) %>%
-  mutate(across(where(is.numeric), as.character))
+  summarize_metrics(subject_parent)
 
 write_sheet(public_reg_subject_parent, los_sheet_url, "Top-level Subject")
 
@@ -248,16 +180,7 @@ public_reg_subject <- public_reg %>%
   })) %>%
   unnest(subject) %>%
   mutate(subject = if_else(is.na(subject), "No subject", subject)) %>%
-  group_by(subject) %>%
-  summarize(total = n(),
-            outputs_n = sum(has_output),
-            outputs_pct = pct(has_output),
-            outcomes_n = sum(has_outcome),
-            outcomes_pct = pct(has_outcome),
-            LOS_n = sum(is_los),
-            LOS_pct = pct(is_los)) %>%
-  mutate(across(ends_with("_pct"), ~ paste0(.x, "%"))) %>%
-  mutate(across(where(is.numeric), as.character))
+  summarize_metrics(subject)
 
 write_sheet(public_reg_subject, los_sheet_url, "Lower-level subject")
 
