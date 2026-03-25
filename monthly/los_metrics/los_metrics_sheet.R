@@ -85,21 +85,29 @@ write_sheet(public_reg_institution, los_sheet_url, "Institution")
 ### Funded ----
 
 public_reg_funded <- public_reg %>%
-  mutate(funded = map_chr(funder, ~ {
-    if (is.na(.x)) return("Unfunded")
+  mutate(funder = map(funder, ~ {
+    if (is.na(.x)) return(NA_character_)
     result <- fromJSON(.x)
-    if (length(result) == 0) "Unfunded" else "Funded"
+    if (length(result) == 0) NA_character_ else as.character(result)
   })) %>%
-  group_by(funded) %>%
-  summarize(total = n(),
-            outputs_n = sum(has_output),
-            outputs_pct = pct(has_output),
-            outcomes_n = sum(has_outcome),
-            outcomes_pct = pct(has_outcome),
-            LOS_n = sum(is_los),
-            LOS_pct = pct(is_los)) %>%
-  mutate(across(ends_with("_pct"), ~ paste0(.x, "%"))) %>%
-  mutate(across(where(is.numeric), as.character))
+  unnest(funder) %>%
+  mutate(funder = if_else(is.na(funder), "Unfunded", funder)) %>%
+  group_by(reg_guid) %>%
+  summarize(
+    # a registration is "new" if ANY of its funders are new
+    is_new = any(!funder %in% current_funder$funder & funder != "Unfunded"),
+    is_existing = any(funder %in% current_funder$funder & funder != "Unfunded"),
+    is_unfunded = all(funder == "Unfunded"),
+    # carry through the metrics - take first value since they're the same per reg
+    has_output = first(has_output),
+    has_outcome = first(has_outcome),
+    is_los = first(is_los)
+  ) %>%
+  mutate(funded = case_when(
+    is_unfunded             ~ "Unfunded",
+    is_new                  ~ "New funders",
+    is_existing             ~ "Existing funders"
+  ))
 
 write_sheet(public_reg_funded, los_sheet_url, "Funded")
 
