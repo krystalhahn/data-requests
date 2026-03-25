@@ -272,6 +272,19 @@ public_reg_registry_long <- public_reg_registry %>%
   rename(attribute = registry) %>%
   select(dimension, metric, measure, attribute, value)
 
+public_reg_template_registry_long <- public_reg_template_registry %>%
+  pivot_longer(cols = -c("template", "registry"),
+               names_to = "metric",
+               values_to = "value") %>%
+  mutate(measure = case_when(str_detect(metric, "_n") ~ "count",
+                             str_detect(metric, "_pct") ~ "percentage",
+                             metric == "total" ~ "count"),
+         metric = str_remove(metric, "_(n|pct)$"),
+         dimension = "template-registry pair") %>%
+  rename(attribute = template,
+         additional_attribute = registry) %>%
+  select(dimension, metric, measure, attribute, additional_attribute, value)
+
 public_reg_subject_parent_long <- public_reg_subject_parent %>%
   pivot_longer(cols = -"subject_parent",
                names_to = "metric",
