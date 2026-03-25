@@ -198,7 +198,7 @@ public_reg_overall_long <- public_reg_overall %>%
          metric = str_remove(metric, "_(n|pct)$"),
          dimension = "overall",
          attribute = NA) %>%
-  select(metric, dimension, measure, attribute, value)
+  select(dimension, metric, measure, attribute, value)
 
 public_reg_affiliated_long <- public_reg_affiliated %>%
   pivot_longer(cols = -"affiliated",
@@ -210,7 +210,7 @@ public_reg_affiliated_long <- public_reg_affiliated %>%
          metric = str_remove(metric, "_(n|pct)$"),
          dimension = "affiliated") %>%
   rename(attribute = affiliated) %>%
-  select(metric, dimension, measure, attribute, value)
+  select(dimension, metric, measure, attribute, value)
 
 public_reg_institution_long <- public_reg_institution %>%
   pivot_longer(cols = -"institution",
@@ -222,7 +222,7 @@ public_reg_institution_long <- public_reg_institution %>%
          metric = str_remove(metric, "_(n|pct)$"),
          dimension = "institution") %>%
   rename(attribute = institution) %>%
-  select(metric, dimension, measure, attribute, value)
+  select(dimension, metric, measure, attribute, value)
 
 public_reg_funded_long <- public_reg_funded %>%
   pivot_longer(cols = -"funded",
@@ -234,7 +234,7 @@ public_reg_funded_long <- public_reg_funded %>%
          metric = str_remove(metric, "_(n|pct)$"),
          dimension = "funded") %>%
   rename(attribute = funded) %>%
-  select(metric, dimension, attribute, value)
+  select(dimension, metric, measure, attribute, value)
 
 public_reg_funder_long <- public_reg_funder %>%
   pivot_longer(cols = -"funder",
@@ -246,7 +246,7 @@ public_reg_funder_long <- public_reg_funder %>%
          metric = str_remove(metric, "_(n|pct)$"),
          dimension = "funder") %>%
   rename(attribute = funder) %>%
-  select(metric, dimension, attribute, value)
+  select(dimension, metric, measure, attribute, value)
 
 public_reg_template_long <- public_reg_template %>%
   pivot_longer(cols = -"template",
@@ -258,7 +258,7 @@ public_reg_template_long <- public_reg_template %>%
          metric = str_remove(metric, "_(n|pct)$"),
          dimension = "template") %>%
   rename(attribute = template) %>%
-  select(metric, dimension, attribute, value)
+  select(dimension, metric, measure, attribute, value)
 
 public_reg_registry_long <- public_reg_registry %>%
   pivot_longer(cols = -"registry",
@@ -270,7 +270,7 @@ public_reg_registry_long <- public_reg_registry %>%
          metric = str_remove(metric, "_(n|pct)$"),
          dimension = "registry") %>%
   rename(attribute = registry) %>%
-  select(metric, dimension, attribute, value)
+  select(dimension, metric, measure, attribute, value)
 
 public_reg_subject_parent_long <- public_reg_subject_parent %>%
   pivot_longer(cols = -"subject_parent",
@@ -282,7 +282,7 @@ public_reg_subject_parent_long <- public_reg_subject_parent %>%
          metric = str_remove(metric, "_(n|pct)$"),
          dimension = "top-level subject") %>%
   rename(attribute = subject_parent) %>% 
-  select(metric, dimension, attribute, value)
+  select(dimension, metric, measure, attribute, value)
 
 public_reg_subject_long <- public_reg_subject %>%
   pivot_longer(cols = -"subject",
@@ -294,7 +294,7 @@ public_reg_subject_long <- public_reg_subject %>%
          metric = str_remove(metric, "_(n|pct)$"),
          dimension = "lower-level subject") %>%
   rename(attribute = subject) %>%
-  select(metric, dimension, attribute, value)
+  select(dimension, metric, measure, attribute, value)
 
 los_metrics_long <- bind_rows(
   public_reg_overall_long,
