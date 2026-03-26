@@ -7,11 +7,10 @@ library(tibble)
 library(purrr)
 library(tidyr)
 
-all_reg <- read_csv("~/Desktop/all_registry_reg_ext_2026-02-21.csv")
+all_reg <- read_csv("~/Desktop/all_registrations_for_los_2026-03-04.csv")
 
 public_reg <- all_reg %>%
   filter(is_public, !is_deleted, !is.na(date_registered), moderation_state == "accepted", (spam_status != 2 | is.na(spam_status))) %>%
-  # (retraction_state != "approved" | is.na(retraction_state))
   mutate(has_output = str_detect(connected_outputs, "DATA|CODE|MATERIALS|SUPPLEMENTS"),
          has_outcome = str_detect(connected_outputs, "PAPERS")) %>%
   mutate(is_los = has_output & has_outcome)
@@ -182,7 +181,7 @@ public_reg_subject <- public_reg %>%
   mutate(subject = if_else(is.na(subject), "No subject", subject)) %>%
   summarize_metrics(subject)
 
-write_sheet(public_reg_subject, los_sheet_url, "Lower-level subject")
+write_sheet(public_reg_subject, los_sheet_url, "Lower-level Subject")
 
 ## Master sheet with longitudinal long data ----
 
