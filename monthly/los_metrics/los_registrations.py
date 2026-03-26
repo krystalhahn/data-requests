@@ -3,10 +3,10 @@
 # number of registrations with at least 1 outcome linked in the related resource paper section
 # number of registrations with both an output and outcome linked (LOS)
 
-def get_all_registrations_for_los():
+def get_all_registrations_for_los(cutoff):
     import csv
     import io
-    from django.utils import timezone
+    import datetime
     from osf.utils.outcomes import ArtifactTypes
     from osf.models import Identifier, OutcomeArtifact
     from tqdm import tqdm
@@ -18,7 +18,9 @@ def get_all_registrations_for_los():
     writer = csv.DictWriter(output, COL_HEADERS)
     writer.writeheader()
 
-    target_regs = Registration.objects.all()
+    cutoff_dt = datetime.datetime.fromisoformat(f"{cutoff}T00:00:00+00:00")
+
+    target_regs = Registration.objects.filter(created__lte=cutoff_dt)
 
     pbar = tqdm(total=target_regs.count())
 
@@ -33,9 +35,13 @@ def get_all_registrations_for_los():
         for o in outcomes:
             connected_artifacts = o.artifact_metadata.exclude(
                 artifact_type=ArtifactTypes.PRIMARY.value
-            ).filter(finalized=True, deleted__isnull=True)
+            ).filter(
+                Q(finalized=True) &
+                Q(created__lte=cutoff_dt) &
+                (Q(deleted__isnull=True) | Q(deleted__gt=cutoff_dt))
+            )
             for artifact in connected_artifacts:
-                artifact_label = ARTIFACT_TYPE_LABELS.get(artifact.artifact_type, str(artifact.artifact_type))
+                artifact_label = ARTIFACT_TYPE_LABELS.get(artifact.artifact_type,  str(artifact.artifact_type))
                 connected_resources.append(artifact_label)
 
         gmr = GuidMetadataRecord.objects.filter(guid___id=reg._id).first()
