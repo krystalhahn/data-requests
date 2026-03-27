@@ -213,7 +213,7 @@ public_reg_institution_long <- public_reg_institution %>% reshape_data("institut
 
 public_reg_funded_long <- public_reg_funded %>% reshape_data("funded", "funded")
 
-public_reg_funder_long <- public_reg_funder %>% reshape_data("funder", "funder")
+public_reg_funder_long <- public_reg_funder %>% reshape_data("funder", c("funder", "funder_type"))
 
 public_reg_template_long <- public_reg_template %>% reshape_data("template", "template")
 
