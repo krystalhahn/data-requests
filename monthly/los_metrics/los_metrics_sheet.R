@@ -282,6 +282,7 @@ los_metrics_long <- bind_rows(
   public_reg_funder_long,
   public_reg_template_long,
   public_reg_registry_long,
+  public_reg_template_registry_long,
   public_reg_subject_parent_long,
   public_reg_subject_long
 )
