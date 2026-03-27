@@ -187,19 +187,23 @@ write_sheet(public_reg_subject, los_sheet_url, "Lower-level Subject")
 
 los_sheet_id <- gs4_get(los_sheet_url)$spreadsheet_id
 
-# specify tabs to format and percentage columns in each tab
-tab_config <- list(
-  list(sheet_id = 1861382765, col_ranges = list(c(2, 3), c(4, 5), c(6, 7))),  # Overall
-  list(sheet_id = 2250666, col_ranges = list(c(3, 4), c(5, 6), c(7, 8))),     # Affiliated
-  list(sheet_id = 1989277621, col_ranges = list(c(3, 4), c(5, 6), c(7, 8))),  # Institution
-  list(sheet_id = 2010380370, col_ranges = list(c(3, 4), c(5, 6), c(7, 8))),  # Funded
-  list(sheet_id = 1625499882, col_ranges = list(c(4, 5), c(6, 7), c(8, 9))),  # Funder
-  list(sheet_id = 1424056586, col_ranges = list(c(3, 4), c(5, 6), c(7, 8))),  # Template
-  list(sheet_id = 335192015, col_ranges = list(c(3, 4), c(5, 6), c(7, 8))),   # Registry
-  list(sheet_id = 1962386726, col_ranges = list(c(4, 5), c(6, 7), c(8, 9))),  # Template-Registry pair
-  list(sheet_id = 1382889481, col_ranges = list(c(3, 4), c(5, 6), c(7, 8))),  # Top-level Subject
-  list(sheet_id = 1579685792, col_ranges = list(c(3, 4), c(5, 6), c(7, 8)))   # Lower-level Subject
-)
+# build the list of tabs and _pct columns
+los_sheet_props <- sheet_properties(los_sheet_url) %>%
+  select(name, id)
+
+# find the column indices of _pct columns in each tab
+tab_config <- map(1:nrow(los_sheet_props), ~ {
+  tab_name <- los_sheet_props$name[.x]
+  tab_id   <- los_sheet_props$id[.x]
+  
+  headers <- read_sheet(los_sheet_url, sheet = tab_name, n_max = 0) %>% names()
+  
+  pct_indices <- which(str_detect(headers, "_pct$")) - 1
+  
+  col_ranges <- map(pct_indices, ~ c(.x, .x + 1))
+  
+  list(sheet_id = tab_id, col_ranges = col_ranges)
+})
 
 requests <- map(tab_config, ~ {
   tab <- .x
