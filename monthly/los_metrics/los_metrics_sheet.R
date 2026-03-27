@@ -182,6 +182,51 @@ public_reg_subject <- public_reg %>%
 
 write_sheet(public_reg_subject, los_sheet_url, "Lower-level Subject")
 
+# Format sheet data ----
+# specifically, use a batch update API request to format percentage values
+
+los_sheet_id <- gs4_get(los_sheet_url)$spreadsheet_id
+
+# specify tabs to format and percentage columns in each tab
+tab_config <- list(
+  list(sheet_id = 1861382765, col_ranges = list(c(2, 3), c(4, 5), c(6, 7))),  # Overall
+  list(sheet_id = 2250666, col_ranges = list(c(3, 4), c(5, 6), c(7, 8))),     # Affiliated
+  list(sheet_id = 1989277621, col_ranges = list(c(3, 4), c(5, 6), c(7, 8))),  # Institution
+  list(sheet_id = 2010380370, col_ranges = list(c(3, 4), c(5, 6), c(7, 8))),  # Funded
+  list(sheet_id = 1625499882, col_ranges = list(c(4, 5), c(6, 7), c(8, 9))),  # Funder
+  list(sheet_id = 1424056586, col_ranges = list(c(3, 4), c(5, 6), c(7, 8))),  # Template
+  list(sheet_id = 335192015, col_ranges = list(c(3, 4), c(5, 6), c(7, 8))),   # Registry
+  list(sheet_id = 1962386726, col_ranges = list(c(4, 5), c(6, 7), c(8, 9))),  # Template-Registry pair
+  list(sheet_id = 1382889481, col_ranges = list(c(3, 4), c(5, 6), c(7, 8))),  # Top-level Subject
+  list(sheet_id = 1579685792, col_ranges = list(c(3, 4), c(5, 6), c(7, 8)))   # Lower-level Subject
+)
+
+requests <- map(tab_config, ~ {
+  tab <- .x
+  map(tab$col_ranges, ~ list(
+    repeatCell = list(
+      range = list(sheetId = tab$sheet_id,
+                   startColumnIndex = .x[1],
+                   endColumnIndex = .x[2]),
+      cell = list(userEnteredFormat = list(
+        numberFormat = list(type = "NUMBER", pattern = "0.0\"%\";0.0\"%\";0\"%\"")
+      )),
+      fields = "userEnteredFormat.numberFormat"
+    )
+  ))
+}) %>%
+  unlist(recursive = FALSE)
+
+req <- request_generate(
+  endpoint = "sheets.spreadsheets.batchUpdate",
+  params = list(
+    spreadsheetId = los_sheet_id,
+    requests = requests
+  )
+)
+
+request_make(req)
+
 ## Master sheet with longitudinal long data ----
 
 ### To create current month's Master sheet ----
