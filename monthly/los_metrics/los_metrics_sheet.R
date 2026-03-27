@@ -164,7 +164,7 @@ public_reg_subject_parent <- public_reg %>%
     if (length(result) == 0) NA_character_ else as.character(result)
   })) %>%
   unnest(subject_parent) %>%
-  mutate(subject_parent = if_else(is.na(subject_parent), "No subject", subject_parent)) %>%
+  mutate(subject_parent = if_else(is.na(subject_parent), "Unspecified", subject_parent)) %>%
   summarize_metrics(subject_parent)
 
 write_sheet(public_reg_subject_parent, los_sheet_url, "Top-level Subject")
@@ -177,7 +177,7 @@ public_reg_subject <- public_reg %>%
     if (length(result) == 0) NA_character_ else as.character(result)
   })) %>%
   unnest(subject) %>%
-  mutate(subject = if_else(is.na(subject), "No subject", subject)) %>%
+  mutate(subject = if_else(is.na(subject), "Unspecified", subject)) %>%
   summarize_metrics(subject)
 
 write_sheet(public_reg_subject, los_sheet_url, "Lower-level Subject")
