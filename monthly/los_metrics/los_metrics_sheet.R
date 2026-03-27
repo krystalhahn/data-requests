@@ -34,9 +34,7 @@ summarize_metrics <- function(df, ...) {
               outcomes_pct = pct(has_outcome),
               LOS_n = sum(is_los),
               LOS_pct = pct(is_los),
-              .groups = "drop") %>%
-    mutate(across(ends_with("_pct"), ~ paste0(.x, "%"))) %>%
-    mutate(across(where(is.numeric), as.character))
+              .groups = "drop")
 }
 
 ### Overall ----
@@ -108,9 +106,10 @@ public_reg_funded <- public_reg %>%
 
 if (!"New funders" %in% public_reg_funded$funded) {
   public_reg_funded <- public_reg_funded %>%
-    bind_rows(tibble(funded = "New funders", total = "0", outputs_n = "0",
-                     outputs_pct = "0%", outcomes_n = "0", outcomes_pct = "0%",
-                     LOS_n = "0", LOS_pct = "0%")) %>%
+    bind_rows(tibble(funded = "New funders", total = 0, 
+                     outputs_n = 0, outputs_pct = 0, 
+                     outcomes_n = 0, outcomes_pct = 0,
+                     LOS_n = 0, LOS_pct = 0)) %>%
     mutate(funded = factor(funded, levels = c("Funded", "New funders", "Existing funders", "Unfunded"))) %>%
     arrange(funded)
 }
