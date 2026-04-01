@@ -211,6 +211,73 @@ pct_change <- los_metrics_change %>%
 los_metrics_master <- bind_rows(base, n_change, pct_change) %>%
   rename(!!current_month := value)
 
+# set order of metric and measure levels
+metric_levels  <- c("total", "outputs", "outcomes", "LOS")
+measure_levels <- c("n", "n_change", "pct_change", "pct_total")
+dimension_levels <- c("overall", "affiliated", "institution", "funded", "funder", "template", "registry", "template-registry pair", "top-level subject", "lower-level subject")
+
+### write to Master sheet ----
+current_master <- read_sheet(los_sheet_url, sheet = "Master")
+
+updated_master <- current_master %>%
+  full_join(los_metrics_01_long, by = key_cols) %>%
+  mutate(
+    dimension = factor(dimension, levels = dimension_levels), 
+    metric = factor(metric, levels = metric_levels),
+    measure = factor(measure, levels = measure_levels)
+  ) %>% 
+  arrange(dimension, attribute, metric, measure)
+
+write_sheet(updated_master, los_sheet_url, sheet = "Master")
+
+## generate dimension data for individual dimension sheets ----
+
+# define dimensions and their grouping attributes
+dims <- list(
+  list(name = "Overall",                 dim = "overall",                attr = NULL,                           attr1_name = NULL,   attr2_name = NULL),
+  list(name = "Affiliated",              dim = "affiliated",             attr = "attribute",                    attr1_name = "affiliated_status", attr2_name = NULL),
+  list(name = "Institution",             dim = "institution",            attr = "attribute",                    attr1_name = "institution", attr2_name = NULL),
+  list(name = "Funded",                  dim = "funded",                 attr = "attribute",                    attr1_name = "funded_status", attr2_name = NULL),
+  list(name = "Funder",                  dim = "funder",                 attr = c("attribute", "attribute_2"),  attr1_name = "funder", attr2_name = "funder_type"),
+  list(name = "Template",                dim = "template",               attr = "attribute",                    attr1_name = "template", attr2_name = NULL),
+  list(name = "Registry",                dim = "registry",               attr = "attribute",                    attr1_name = "registry", attr2_name = NULL),
+  list(name = "Template-Registry pair",  dim = "template-registry pair", attr = c("attribute", "attribute_2"),  attr1_name = "template", attr2_name = "registry"),
+  list(name = "Top-level Subject",       dim = "top-level subject",      attr = "attribute",                    attr1_name = "subject", attr2_name = NULL),
+  list(name = "Lower-level Subject",     dim = "lower-level subject",    attr = c("attribute", "attribute_2"),  attr1_name = "subject", attr2_name = "parent_subject")
+)
+
+# write wide data to each dimension sheet
+walk(dims, ~ {
+  
+  id_cols <- .x$attr
+  
+  los_metrics_wide <- los_metrics_long %>%
+    filter(dimension == .x$dim) %>%
+    mutate(
+      metric  = factor(metric, levels = metric_levels),
+      measure = factor(measure, levels = measure_levels)
+    ) %>%
+    arrange(across(all_of(c(id_cols, "metric", "measure")))) %>%
+    pivot_wider(
+      id_cols = all_of(id_cols),
+      names_from = c("metric", "measure"),
+      values_from = value,
+      names_glue = "{metric}_{measure}"
+    ) %>%
+    mutate(month = "2026-01") %>%
+    select(month, everything())
+  
+  # Rename attribute columns if new names are provided
+  if (!is.null(.x$attr1_name)) {
+    los_metrics_wide <- los_metrics_wide %>% rename(!!.x$attr1_name := !!sym(id_cols[1]))
+  }
+  if (!is.null(.x$attr2_name) && length(id_cols) == 2) {
+    los_metrics_wide <- los_metrics_wide %>% rename(!!.x$attr2_name := !!sym(id_cols[2]))
+  }
+  
+  write_sheet(los_metrics_wide, los_sheet_url, sheet = .x$name)
+})
+
 # Pre-addition of change metrics: individual sheets --> Master sheet ----
 
 # write to sheet ----
