@@ -18,6 +18,10 @@ public_reg <- all_reg %>%
 # Addition of change metrics: Master sheet --> individual sheets ----
 
 ## generate current month's long data ----
+
+current_month <- as.character(month(floor_date(Sys.Date(), "month") - months(1), label = TRUE, abbr = FALSE))
+prev_month <- as.character(month(floor_date(Sys.Date(), "month") - months(2), label = TRUE, abbr = FALSE))
+
 # helper function for summarizing LOS metrics
 pct <- function(x) round(mean(x) * 100, 1)
 
@@ -170,13 +174,11 @@ los_metrics_long <- bind_rows(
                 rename(attribute = subject, attribute_2 = parent_subject), 
               by = "attribute") %>%
     summarize_long("lower-level subject", c("attribute", "attribute_2"))
-)
+) %>%
+  rename(!!current_month := value)
 
 ### calculate change metrics (n_change, pct_change) ----
 key_cols <- c("dimension", "metric", "measure", "attribute", "attribute_2")
-
-current_month <- as.character(month(floor_date(Sys.Date(), "month") - months(1), label = TRUE, abbr = FALSE))
-prev_month <- as.character(month(floor_date(Sys.Date(), "month") - months(2), label = TRUE, abbr = FALSE))
 
 current_master <- read_sheet(los_sheet_url, sheet = "Master") 
 
