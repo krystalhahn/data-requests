@@ -15,6 +15,45 @@ public_reg <- all_reg %>%
          has_outcome = str_detect(connected_outputs, "PAPERS")) %>%
   mutate(is_los = has_output & has_outcome)
 
+# Addition of change metrics: Master sheet --> individual sheets ----
+# helper function for summarizing LOS metrics
+pct <- function(x) round(mean(x) * 100, 1)
+
+# generates long format directly from raw data
+summarize_long <- function(df, dimension_name, grouping_variables = character(0), ...) {
+  
+  df %>%
+    group_by(across(all_of(grouping_variables)), ...) %>%
+    summarize(
+      total   = n(),
+      outputs = sum(has_output),
+      outcomes = sum(has_outcome),
+      LOS     = sum(is_los),
+      outputs_pct  = pct(has_output),
+      outcomes_pct = pct(has_outcome),
+      LOS_pct      = pct(is_los),
+      .groups = "drop"
+    ) %>%
+    pivot_longer(
+      cols = -any_of(grouping_variables),
+      names_to = "metric",
+      values_to = "value"
+    ) %>%
+    mutate(
+      measure = case_when(
+        str_detect(metric, "_pct$") ~ "pct_total",
+        TRUE                        ~ "n"
+      ),
+      metric = str_remove(metric, "_pct$"),
+      dimension = dimension_name
+    ) %>%
+    { if (length(grouping_variables) >= 1) rename(., attribute = all_of(grouping_variables[1])) else mutate(., attribute = NA) } %>%
+    { if (length(grouping_variables) >= 2) rename(., attribute_2 = all_of(grouping_variables[2])) else mutate(., attribute_2 = NA) } %>%
+    select(dimension, metric, measure, attribute, attribute_2, value)
+}
+
+# Pre-addition of change metrics: individual sheets --> Master sheet ----
+
 # write to sheet ----
 # set los_sheet_url variable
 
