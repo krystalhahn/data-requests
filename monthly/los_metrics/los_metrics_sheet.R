@@ -16,6 +16,8 @@ public_reg <- all_reg %>%
   mutate(is_los = has_output & has_outcome)
 
 # Addition of change metrics: Master sheet --> individual sheets ----
+
+## generate current month's long data ----
 # helper function for summarizing LOS metrics
 pct <- function(x) round(mean(x) * 100, 1)
 
@@ -52,7 +54,9 @@ summarize_long <- function(df, dimension_name, grouping_variables = character(0)
     select(dimension, metric, measure, attribute, attribute_2, value)
 }
 
-## generate current month's long data ----
+# pull current funders to determine new and existing funders below
+current_funders <- read_sheet(los_sheet_url, "Funder")
+
 los_metrics_long <- bind_rows(
   
   # overall
@@ -351,12 +355,12 @@ summarize_metrics <- function(df, ...) {
               .groups = "drop")
 }
 
-### Overall ----
+### overall
 public_reg_overall <- public_reg %>% summarize_metrics()
 
 write_sheet(public_reg_overall, los_sheet_url, "Overall")
 
-### Affiliated ----
+### affiliated
 
 public_reg_affiliated <- public_reg %>%
   mutate(affiliated = map_chr(institution, ~ {
@@ -368,7 +372,7 @@ public_reg_affiliated <- public_reg %>%
 
 write_sheet(public_reg_affiliated, los_sheet_url, "Affiliated")
 
-### Institution ----
+### institution
 
 public_reg_institution <- public_reg %>%
   mutate(institution = map(institution, ~ {
@@ -382,7 +386,7 @@ public_reg_institution <- public_reg %>%
 
 write_sheet(public_reg_institution, los_sheet_url, "Institution")
 
-### Funded ----
+### funded
 
 current_funders <- read_sheet(los_sheet_url, "Funder")
 
@@ -430,7 +434,7 @@ if (!"New funders" %in% public_reg_funded$funded) {
 
 write_sheet(public_reg_funded, los_sheet_url, "Funded")
 
-### Funder ----
+### funder
 
 public_reg_funder <- public_reg %>%
   mutate(funder = map(funder, ~ {
@@ -451,25 +455,24 @@ public_reg_funder <- public_reg %>%
 
 write_sheet(public_reg_funder, los_sheet_url, "Funder")
 
-### Template ----
+### template
 
 public_reg_template <- public_reg %>% summarize_metrics(template)
 
 write_sheet(public_reg_template, los_sheet_url, "Template")
 
-### Registry ----
+### registry
 
 public_reg_registry <- public_reg %>% summarize_metrics(registry)
 
 write_sheet(public_reg_registry, los_sheet_url, "Registry")
 
-
-### Template-Registry pairs ----
+### template-registry pairs
 public_reg_template_registry <- public_reg %>% summarize_metrics(template, registry)
 
 write_sheet(public_reg_template_registry, los_sheet_url, "Template-Registry pair")
 
-### Top-level Subject ----
+### top-level subject
 
 public_reg_subject_parent <- public_reg %>%
   mutate(subject_parent = map(subject_parent, ~ {
@@ -483,7 +486,7 @@ public_reg_subject_parent <- public_reg %>%
 
 write_sheet(public_reg_subject_parent, los_sheet_url, "Top-level Subject")
 
-### Lower-level Subject ----
+### lower-level subject
 public_reg_subject <- public_reg %>%
   mutate(subject = map(subject, ~ {
     if (is.na(.x)) return(NA_character_)
@@ -613,5 +616,3 @@ range_write(los_sheet_url,
             sheet = "Master",
             range = cell_cols(next_col),
             col_names = TRUE)
-
-# will modify to handle when there are new institutions, funders, etc.
