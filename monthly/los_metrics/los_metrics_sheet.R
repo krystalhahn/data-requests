@@ -168,6 +168,49 @@ los_metrics_long <- bind_rows(
     summarize_long("lower-level subject", c("attribute", "attribute_2"))
 )
 
+### calculate change metrics (n_change, pct_change) ----
+key_cols <- c("dimension", "metric", "measure", "attribute", "attribute_2")
+
+current_month <- as.character(month(floor_date(Sys.Date(), "month") - months(1), label = TRUE, abbr = FALSE))
+prev_month <- as.character(month(floor_date(Sys.Date(), "month") - months(2), label = TRUE, abbr = FALSE))
+
+current_master <- read_sheet(los_sheet_url, sheet = "Master") 
+
+los_metrics_change <- los_metrics_long %>%
+  left_join(
+    master %>% select(all_of(key_cols), prev_value = all_of(prev_month)),
+    by = key_cols
+  ) %>%
+  mutate(
+    curr_value = as.numeric(.data[[current_month]]),
+    prev_value = as.numeric(prev_value)
+  )
+
+# base rows
+base <- los_metrics_change %>%
+  transmute(dimension, metric, measure, attribute, attribute_2, value = curr_value)
+
+# n_change rows
+n_change <- los_metrics_change %>%
+  filter(measure == "n") %>%
+  mutate(value = if_else(measure == "n", curr_value - prev_value, NA_real_)) %>%
+  transmute(dimension, metric, measure = "n_change", attribute, attribute_2, value)
+
+# pct_change rows
+pct_change <- los_metrics_change %>%
+  filter(measure == "n") %>%
+  mutate(value = case_when(
+    is.na(prev_value) ~ NA_real_,
+    prev_value == 0 & curr_value == 0 ~ 0,
+    prev_value == 0 & curr_value != 0 ~ NA_real_,
+    TRUE ~ round((curr_value - prev_value) / prev_value * 100, 1)
+  )) %>%
+  transmute(dimension, metric, measure = "pct_change", attribute, attribute_2, value)
+
+# build master data for current month
+los_metrics_master <- bind_rows(base, n_change, pct_change) %>%
+  rename(!!current_month := value)
+
 # Pre-addition of change metrics: individual sheets --> Master sheet ----
 
 # write to sheet ----
