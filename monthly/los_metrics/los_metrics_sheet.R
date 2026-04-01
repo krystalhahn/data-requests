@@ -182,7 +182,7 @@ current_master <- read_sheet(los_sheet_url, sheet = "Master")
 
 los_metrics_change <- los_metrics_long %>%
   left_join(
-    master %>% select(all_of(key_cols), prev_value = all_of(prev_month)),
+    current_master %>% select(all_of(key_cols), prev_value = all_of(prev_month)),
     by = key_cols
   ) %>%
   mutate(
@@ -221,7 +221,7 @@ measure_levels <- c("n", "n_change", "pct_change", "pct_total")
 dimension_levels <- c("overall", "affiliated", "institution", "funded", "funder", "template", "registry", "template-registry pair", "top-level subject", "lower-level subject")
 
 ### write to Master sheet ----
-current_master <- read_sheet(los_sheet_url, sheet = "Master")
+# current Master sheet pulled in before calculating change metrics
 
 updated_master <- current_master %>%
   full_join(los_metrics_01_long, by = key_cols) %>%
