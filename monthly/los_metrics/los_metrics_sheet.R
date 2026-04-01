@@ -264,10 +264,10 @@ walk(dims, ~ {
       values_from = value,
       names_glue = "{metric}_{measure}"
     ) %>%
-    mutate(month = "2026-01") %>%
+    mutate(month = format(floor_date(Sys.Date(), "month") - months(1), "%Y-%m")) %>%
     select(month, everything())
   
-  # Rename attribute columns if new names are provided
+  # rename attribute columns if new names are provided
   if (!is.null(.x$attr1_name)) {
     los_metrics_wide <- los_metrics_wide %>% rename(!!.x$attr1_name := !!sym(id_cols[1]))
   }
@@ -277,6 +277,55 @@ walk(dims, ~ {
   
   write_sheet(los_metrics_wide, los_sheet_url, sheet = .x$name)
 })
+
+### format sheet data ----
+# specifically, use a batch update API request to format percentage values
+
+los_sheet_id <- gs4_get(los_sheet_url)$spreadsheet_id
+
+# build the list of tabs and _pct columns
+los_sheet_props <- sheet_properties(los_sheet_url) %>%
+  select(name, id)
+
+# find the column indices of _pct columns in each tab
+tab_config <- map(1:nrow(los_sheet_props), ~ {
+  tab_name <- los_sheet_props$name[.x]
+  tab_id   <- los_sheet_props$id[.x]
+  
+  headers <- read_sheet(los_sheet_url, sheet = tab_name, n_max = 0) %>% names()
+  
+  pct_indices <- which(str_detect(headers, "_pct")) - 1
+  
+  col_ranges <- map(pct_indices, ~ c(.x, .x + 1))
+  
+  list(sheet_id = tab_id, col_ranges = col_ranges)
+})
+
+requests <- map(tab_config, ~ {
+  tab <- .x
+  map(tab$col_ranges, ~ list(
+    repeatCell = list(
+      range = list(sheetId = tab$sheet_id,
+                   startColumnIndex = .x[1],
+                   endColumnIndex = .x[2]),
+      cell = list(userEnteredFormat = list(
+        numberFormat = list(type = "NUMBER", pattern = "0.0\"%\";-0.0\"%\";0\"%\"")
+      )),
+      fields = "userEnteredFormat.numberFormat"
+    )
+  ))
+}) %>%
+  unlist(recursive = FALSE)
+
+req <- request_generate(
+  endpoint = "sheets.spreadsheets.batchUpdate",
+  params = list(
+    spreadsheetId = los_sheet_id,
+    requests = requests
+  )
+)
+
+request_make(req)
 
 # Pre-addition of change metrics: individual sheets --> Master sheet ----
 
