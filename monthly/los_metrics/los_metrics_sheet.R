@@ -52,6 +52,122 @@ summarize_long <- function(df, dimension_name, grouping_variables = character(0)
     select(dimension, metric, measure, attribute, attribute_2, value)
 }
 
+## generate current month's long data ----
+los_metrics_long <- bind_rows(
+  
+  # overall
+  public_reg %>% summarize_long("overall"),
+  
+  # affiliated
+  public_reg %>%
+    mutate(attribute = map_chr(institution, ~ {
+      if (is.na(.x)) return("Unaffiliated")
+      result <- fromJSON(.x)
+      if (length(result) == 0) "Unaffiliated" else "Affiliated"
+    })) %>%
+    summarize_long("affiliated", "attribute"),
+  
+  # institution
+  public_reg %>%
+    mutate(attribute = map(institution, ~ {
+      if (is.na(.x)) return(NA_character_)
+      result <- fromJSON(.x)
+      if (length(result) == 0) NA_character_ else as.character(result)
+    })) %>%
+    unnest(attribute) %>%
+    mutate(attribute = if_else(is.na(attribute), "Unaffiliated", attribute)) %>%
+    summarize_long("institution", "attribute"),
+  
+  # funded
+  public_reg %>%
+    mutate(funder = map(funder, ~ {
+      if (is.na(.x)) return(NA_character_)
+      result <- fromJSON(.x)
+      if (length(result) == 0) NA_character_ else as.character(result)
+    })) %>%
+    unnest(funder) %>%
+    mutate(funder = if_else(is.na(funder), "Unfunded", funder)) %>%
+    group_by(reg_guid) %>%
+    summarize(
+      is_new      = any(!funder %in% current_funders$funder & funder != "Unfunded"),
+      is_existing = any(funder %in% current_funders$funder & funder != "Unfunded"),
+      is_unfunded = all(funder == "Unfunded"),
+      has_output  = first(has_output),
+      has_outcome = first(has_outcome),
+      is_los      = first(is_los),
+      .groups = "drop"
+    ) %>%
+    mutate(attribute = case_when(
+      is_unfunded  ~ "Unfunded",
+      is_new       ~ "New funders",
+      is_existing  ~ "Existing funders"
+    )) %>%
+    bind_rows(filter(., attribute != "Unfunded") %>% mutate(attribute = "Funded")) %>%
+    (\(df) if (!"New funders" %in% df$attribute)
+      bind_rows(df, tibble(attribute = "New funders", has_output = 0, has_outcome = 0, is_los = 0))
+     else df)() %>%
+    summarize_long("funded", "attribute"),
+  
+  # funder
+  public_reg %>%
+    mutate(attribute = map(funder, ~ {
+      if (is.na(.x)) return(NA_character_)
+      result <- fromJSON(.x)
+      if (length(result) == 0) NA_character_ else as.character(result)
+    })) %>%
+    unnest(attribute) %>%
+    mutate(
+      attribute = if_else(is.na(attribute), "Unfunded", attribute),
+      attribute_2 = case_when(
+        !attribute %in% current_funders$funder & attribute != "Unfunded" ~ "new",
+        attribute %in% current_funders$funder & attribute != "Unfunded"  ~ "existing",
+        attribute == "Unfunded"                                           ~ "unfunded"
+      )
+    ) %>%
+    summarize_long("funder", c("attribute", "attribute_2")),
+  
+  # template
+  public_reg %>%
+    rename(attribute = template) %>%
+    summarize_long("template", "attribute"),
+  
+  # registry
+  public_reg %>%
+    rename(attribute = registry) %>%
+    summarize_long("registry", "attribute"),
+  
+  # template-registry pair
+  public_reg %>%
+    rename(attribute = template, attribute_2 = registry) %>%
+    summarize_long("template-registry pair", c("attribute", "attribute_2")),
+  
+  # top-level subject
+  public_reg %>%
+    mutate(attribute = map(subject_parent, ~ {
+      if (is.na(.x)) return(NA_character_)
+      result <- fromJSON(.x)
+      if (length(result) == 0) NA_character_ else as.character(result)
+    })) %>%
+    unnest(attribute) %>%
+    mutate(attribute = if_else(is.na(attribute), "Unspecified", attribute)) %>%
+    summarize_long("top-level subject", "attribute"),
+  
+  # lower-level subject
+  public_reg %>%
+    mutate(attribute = map(subject, ~ {
+      if (is.na(.x)) return(NA_character_)
+      result <- fromJSON(.x)
+      if (length(result) == 0) NA_character_ else as.character(result)
+    })) %>%
+    unnest(attribute) %>%
+    mutate(attribute = if_else(is.na(attribute), "Unspecified", attribute)) %>%
+    left_join(subject_types %>% 
+                select(subject, parent_subject) %>% 
+                rename(attribute = subject, attribute_2 = parent_subject), 
+              by = "attribute") %>%
+    summarize_long("lower-level subject", c("attribute", "attribute_2"))
+)
+
 # Pre-addition of change metrics: individual sheets --> Master sheet ----
 
 # write to sheet ----
