@@ -22,10 +22,13 @@ public_reg <- all_reg %>%
 current_month <- as.character(month(floor_date(Sys.Date(), "month") - months(1), label = TRUE, abbr = FALSE))
 prev_month <- as.character(month(floor_date(Sys.Date(), "month") - months(2), label = TRUE, abbr = FALSE))
 
-# helper function for summarizing LOS metrics
-pct <- function(x) round(mean(x) * 100, 1)
+# helper functions for summarizing LOS metrics
 
-# generates long format directly from raw data
+# calculate proportion, but values will be formatted in sheet to appear as percentages
+# round to 4 decimal points so when cells are selected, only two decimal points are shown
+pct <- function(x) round(mean(x), 4)
+
+# generate long format directly from raw data
 summarize_long <- function(df, dimension_name, grouping_variables = character(0), ...) {
   
   df %>%
@@ -58,8 +61,8 @@ summarize_long <- function(df, dimension_name, grouping_variables = character(0)
     select(dimension, metric, measure, attribute, attribute_2, value)
 }
 
-# pull current funders to determine new and existing funders below
-current_funders <- read_sheet(los_sheet_url, "Funder")
+# pull existing funders to determine new and existing funders below
+existing_funders <- read_sheet(los_sheet_url, "Funder")
 
 los_metrics_long <- bind_rows(
   
@@ -124,15 +127,8 @@ los_metrics_long <- bind_rows(
       if (length(result) == 0) NA_character_ else as.character(result)
     })) %>%
     unnest(attribute) %>%
-    mutate(
-      attribute = if_else(is.na(attribute), "Unfunded", attribute),
-      attribute_2 = case_when(
-        !attribute %in% current_funders$funder & attribute != "Unfunded" ~ "new",
-        attribute %in% current_funders$funder & attribute != "Unfunded"  ~ "existing",
-        attribute == "Unfunded"                                           ~ "unfunded"
-      )
-    ) %>%
-    summarize_long("funder", c("attribute", "attribute_2")),
+    mutate(attribute = if_else(is.na(attribute), "Unfunded", attribute),) %>%
+    summarize_long("funder", "attribute"),
   
   # template
   public_reg %>%
@@ -177,14 +173,18 @@ los_metrics_long <- bind_rows(
 ) %>%
   rename(!!current_month := value)
 
+# check that all metrics have been calculated
+table(is.na(los_metrics_long[[current_month]]))
+
 ### calculate change metrics (n_change, pct_change) ----
 key_cols <- c("dimension", "metric", "measure", "attribute", "attribute_2")
 
-current_master <- read_sheet(los_sheet_url, sheet = "Master") 
+current_master <- read_sheet(los_sheet_url, sheet = "Master",
+                             col_types = "cccccnnnllllllllll") 
 
 los_metrics_change <- los_metrics_long %>%
   left_join(
-    current_master %>% select(all_of(key_cols), prev_value = all_of(prev_month)),
+    current_master %>% select(all_of(key_cols), prev_value = all_of(!!prev_month)),
     by = key_cols
   ) %>%
   mutate(
@@ -209,7 +209,7 @@ pct_change <- los_metrics_change %>%
     is.na(prev_value) ~ NA_real_,
     prev_value == 0 & curr_value == 0 ~ 0,
     prev_value == 0 & curr_value != 0 ~ NA_real_,
-    TRUE ~ round((curr_value - prev_value) / prev_value * 100, 1)
+    TRUE ~ round((curr_value - prev_value) / prev_value, 4)
   )) %>%
   transmute(dimension, metric, measure = "pct_change", attribute, attribute_2, value)
 
@@ -226,13 +226,15 @@ dimension_levels <- c("overall", "affiliated", "institution", "funded", "funder"
 # current Master sheet pulled in before calculating change metrics
 
 updated_master <- current_master %>%
-  full_join(los_metrics_01_long, by = key_cols) %>%
+  select(-!!current_month) %>%
+  full_join(los_metrics_master, by = key_cols) %>%
   mutate(
     dimension = factor(dimension, levels = dimension_levels), 
     metric = factor(metric, levels = metric_levels),
     measure = factor(measure, levels = measure_levels)
   ) %>% 
-  arrange(dimension, attribute, metric, measure)
+  arrange(dimension, attribute, metric, measure) %>%
+  select(all_of(key_cols), !!prev_month, !!current_month, everything())
 
 write_sheet(updated_master, los_sheet_url, sheet = "Master")
 
@@ -244,7 +246,7 @@ dims <- list(
   list(name = "Affiliated",              dim = "affiliated",             attr = "attribute",                    attr1_name = "affiliated_status", attr2_name = NULL),
   list(name = "Institution",             dim = "institution",            attr = "attribute",                    attr1_name = "institution", attr2_name = NULL),
   list(name = "Funded",                  dim = "funded",                 attr = "attribute",                    attr1_name = "funded_status", attr2_name = NULL),
-  list(name = "Funder",                  dim = "funder",                 attr = c("attribute", "attribute_2"),  attr1_name = "funder", attr2_name = "funder_type"),
+  list(name = "Funder",                  dim = "funder",                 attr = "attribute",                    attr1_name = "funder", attr2_name = NULL),
   list(name = "Template",                dim = "template",               attr = "attribute",                    attr1_name = "template", attr2_name = NULL),
   list(name = "Registry",                dim = "registry",               attr = "attribute",                    attr1_name = "registry", attr2_name = NULL),
   list(name = "Template-Registry pair",  dim = "template-registry pair", attr = c("attribute", "attribute_2"),  attr1_name = "template", attr2_name = "registry"),
@@ -257,7 +259,7 @@ walk(dims, ~ {
   
   id_cols <- .x$attr
   
-  los_metrics_wide <- los_metrics_long %>%
+  los_metrics_wide <- los_metrics_master %>%
     filter(dimension == .x$dim) %>%
     mutate(
       metric  = factor(metric, levels = metric_levels),
@@ -267,7 +269,7 @@ walk(dims, ~ {
     pivot_wider(
       id_cols = all_of(id_cols),
       names_from = c("metric", "measure"),
-      values_from = value,
+      values_from = !!current_month,
       names_glue = "{metric}_{measure}"
     ) %>%
     mutate(month = format(floor_date(Sys.Date(), "month") - months(1), "%Y-%m")) %>%
@@ -284,17 +286,42 @@ walk(dims, ~ {
   write_sheet(los_metrics_wide, los_sheet_url, sheet = .x$name)
 })
 
-### format sheet data ----
+### adding funder_type to funder tab ----
+
+existing_funders <- updated_master %>% 
+  filter(dimension == "funder" & 
+           metric == "total" &
+           measure == "n" & 
+           !is.na(.data[[prev_month]])) %>% 
+  rename(funder = attribute) %>% distinct(funder)
+
+public_reg_funder <- read_sheet(los_sheet_url, sheet = "Funder")
+
+public_reg_funder_types <- public_reg_funder %>%
+  mutate(
+    funder_type = case_when(
+      !funder %in% existing_funders$funder & funder != "Unfunded" ~ "new",
+      funder %in% existing_funders$funder & funder != "Unfunded"  ~ "existing",
+      funder == "Unfunded"                                           ~ "unfunded"
+    )
+  ) %>%
+  select(month, funder, funder_type, everything())
+
+write_sheet(public_reg_funder_types, los_sheet_url, sheet = "Funder")
+
+## format sheet data ----
 # specifically, use a batch update API request to format percentage values
 
 los_sheet_id <- gs4_get(los_sheet_url)$spreadsheet_id
+
+### individual dimension tabs ----
 
 # build the list of tabs and _pct columns
 los_sheet_props <- sheet_properties(los_sheet_url) %>%
   select(name, id)
 
 # find the column indices of _pct columns in each tab
-tab_config <- map(1:nrow(los_sheet_props), ~ {
+pct_cols <- map(1:nrow(los_sheet_props), ~ {
   tab_name <- los_sheet_props$name[.x]
   tab_id   <- los_sheet_props$id[.x]
   
@@ -307,7 +334,7 @@ tab_config <- map(1:nrow(los_sheet_props), ~ {
   list(sheet_id = tab_id, col_ranges = col_ranges)
 })
 
-requests <- map(tab_config, ~ {
+dimension_tab_requests <- map(pct_cols, ~ {
   tab <- .x
   map(tab$col_ranges, ~ list(
     repeatCell = list(
@@ -315,7 +342,7 @@ requests <- map(tab_config, ~ {
                    startColumnIndex = .x[1],
                    endColumnIndex = .x[2]),
       cell = list(userEnteredFormat = list(
-        numberFormat = list(type = "NUMBER", pattern = "0.0\"%\";-0.0\"%\";0\"%\"")
+        numberFormat = list(type = "PERCENT", pattern = "0.0%;-0.0%;0%")
       )),
       fields = "userEnteredFormat.numberFormat"
     )
@@ -323,11 +350,38 @@ requests <- map(tab_config, ~ {
 }) %>%
   unlist(recursive = FALSE)
 
+### Master tab ----
+
+# read the Master sheet to find _pct row positions
+master <- read_sheet(los_sheet_url, sheet = "test")
+pct_rows <- which(str_detect(master$measure, "pct"))
+
+master_sheet_id <- sheet_properties(los_sheet_url) %>%
+  filter(name == "test") %>%
+  pull(id)
+
+# build requests targeting specific ("pct") rows in Master tab
+master_tab_requests <- map(pct_rows, ~ list(
+  repeatCell = list(
+    range = list(
+      sheetId = master_sheet_id,
+      startRowIndex = .x,      # 0-indexed, so actual row number - 1
+      endRowIndex = .x + 1,
+      startColumnIndex = 5,    # first value column
+      endColumnIndex = 100     # far enough to cover all month columns
+    ),
+    cell = list(userEnteredFormat = list(
+      numberFormat = list(type = "PERCENT", pattern = "0.0%;-0.0%;0%")
+    )),
+    fields = "userEnteredFormat.numberFormat"
+  )
+))
+
 req <- request_generate(
   endpoint = "sheets.spreadsheets.batchUpdate",
   params = list(
     spreadsheetId = los_sheet_id,
-    requests = requests
+    requests = c(dimension_tab_requests, master_tab_requests)
   )
 )
 
