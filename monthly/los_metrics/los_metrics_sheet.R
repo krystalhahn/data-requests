@@ -286,6 +286,47 @@ walk(dims, ~ {
   write_sheet(los_metrics_wide, los_sheet_url, sheet = .x$name)
 })
 
+## adding yearly totals to Master tab ----
+current_year = as.character(year(floor_date(Sys.Date(), "year")))
+month_cols <- month.name
+prev_dec_col <- paste("December", as.numeric(current_year) - 1)
+
+updated_master_wtotals <- updated_master %>%
+  rowwise() %>%
+  mutate(
+    latest_n = if_else(
+      measure == "n",
+      dplyr::last(na.omit(c_across(all_of(month_cols)))),
+      NA_real_
+    ),
+    prev_dec_n = if_else(
+      measure == "n",
+      .data[[prev_dec_col]],
+      NA_real_
+    )
+  ) %>%
+  ungroup() %>%
+  group_by(dimension, metric, attribute, attribute_2) %>%
+  tidyr::fill(prev_dec_n, latest_n, .direction = "downup") %>%
+  rowwise() %>%
+  mutate(
+    
+    !!current_year := case_when(
+      measure == "n"        ~ latest_n,
+      measure == "n_change" ~ sum(c_across(all_of(month_cols)), na.rm = TRUE),
+      measure == "pct_change" ~ {
+        if (is.na(latest_n) || is.na(prev_dec_n) || prev_dec_n == 0) NA_real_
+        else round((latest_n - prev_dec_n) / prev_dec_n, 4)
+      },
+      measure == "pct_total" ~ dplyr::last(na.omit(c_across(all_of(month_cols)))),
+      TRUE ~ NA_real_
+    )
+  ) %>%
+  ungroup() %>%
+  select(-latest_n, -prev_dec_n)
+
+write_sheet(updated_master_wtotals, los_sheet_url, sheet = "Master")
+
 ### adding funder_type to funder tab ----
 
 existing_funders <- updated_master %>% 
