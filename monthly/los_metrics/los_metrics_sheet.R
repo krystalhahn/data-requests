@@ -288,6 +288,7 @@ walk(dims, ~ {
 
 ## adding yearly totals to Master tab ----
 current_year = as.character(year(floor_date(Sys.Date(), "year")))
+year_col <- paste0(current_year, " YTD")
 month_cols <- month.name
 prev_dec_col <- paste("December", as.numeric(current_year) - 1)
 
@@ -311,7 +312,7 @@ updated_master_wtotals <- updated_master %>%
   rowwise() %>%
   mutate(
     
-    !!current_year := case_when(
+    !!year_col := case_when(
       measure == "n"        ~ latest_n,
       measure == "n_change" ~ sum(c_across(all_of(month_cols)), na.rm = TRUE),
       measure == "pct_change" ~ {
