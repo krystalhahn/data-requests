@@ -180,7 +180,7 @@ table(is.na(los_metrics_long[[current_month]]))
 key_cols <- c("dimension", "metric", "measure", "attribute", "attribute_2")
 
 current_master <- read_sheet(los_sheet_url, sheet = "Master",
-                             col_types = "cccccnnnllllllllll") 
+                             col_types = "cccccnnnlllllllllln") 
 
 los_metrics_change <- los_metrics_long %>%
   left_join(
