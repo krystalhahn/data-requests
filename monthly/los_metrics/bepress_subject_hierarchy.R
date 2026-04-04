@@ -7,6 +7,10 @@ library(tibble)
 library(purrr)
 library(tidyr)
 
+# building Bepress subject hierarchy
+
+# using subjects that have been selected on registrations
+# some subjects may have not been selected yet, thus don't show up in the data
 all_reg <- read_csv("~/Desktop/all_registrations_for_los_2026-03-04.csv")
 
 public_reg <- all_reg %>%
@@ -60,3 +64,24 @@ level_3_subjects <- lower_subjects %>%
   select(subject, top_subject, level)
 
 lower_subject_types <- bind_rows(level_2_subjects, level_3_subjects)
+
+# using the options in the Subject model
+subject_types <- read_csv("~/Desktop/subject_types.csv")
+
+# classify each lower-level subject by Bepress level depending on whether their parent subject is a top-level subject
+lower_subjects_sm <- subject_types %>%
+  filter(!subject %in% top_subjects$subject_parent) %>%
+  mutate(level = case_when(!parent_subject %in% top_subjects$subject_parent ~ 3,
+                           parent_subject %in% top_subjects$subject_parent ~ 2))
+
+level_2_subjects_sm <- lower_subjects_sm %>%
+  filter(level == 2) %>%
+  rename(top_subject = parent_subject)
+
+level_3_subjects_sm <- lower_subjects_sm %>%
+  filter(level == 3) %>%
+  left_join(level_2_subjects, by = c("parent_subject" = "subject")) %>%
+  rename(level = level.x) %>%
+  select(subject, top_subject, level)
+
+lower_subject_types_sm <- bind_rows(level_2_subjects_sm, level_3_subjects_sm)
