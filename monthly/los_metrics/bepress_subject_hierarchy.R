@@ -86,4 +86,10 @@ level_3_subjects_sm <- lower_subjects_sm %>%
 
 lower_subject_types_sm <- bind_rows(level_2_subjects_sm, level_3_subjects_sm)
 
+# Note: questionable cases to keep an eye out on
+# usually due to multiple Subject objects for a given subject text
+## Law --> parent: Medieval Studies
+## Neuroscience has no parent while Neurosciences does
+### certain subdisciplines under Neuroscience have multiple objects in which the parent is Neuroscience OR Neurosciences
+
 write_csv(lower_subject_types_sm, "~/Desktop/subject_types_top.csv")
