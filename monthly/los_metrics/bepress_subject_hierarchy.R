@@ -80,7 +80,7 @@ level_2_subjects_sm <- lower_subjects_sm %>%
 
 level_3_subjects_sm <- lower_subjects_sm %>%
   filter(level == 3) %>%
-  left_join(level_2_subjects, by = c("parent_subject" = "subject")) %>%
+  left_join(level_2_subjects_sm, by = c("parent_subject" = "subject")) %>%
   rename(level = level.x) %>%
   select(subject, top_subject, level)
 
