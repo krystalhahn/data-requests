@@ -85,3 +85,5 @@ level_3_subjects_sm <- lower_subjects_sm %>%
   select(subject, top_subject, level)
 
 lower_subject_types_sm <- bind_rows(level_2_subjects_sm, level_3_subjects_sm)
+
+write_csv(lower_subject_types_sm, "~/Desktop/subject_types_top.csv")
