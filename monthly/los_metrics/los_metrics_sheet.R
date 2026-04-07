@@ -65,6 +65,9 @@ summarize_long <- function(df, dimension_name, grouping_variables = character(0)
 # pull existing funders to determine new and existing funders below
 existing_funders <- read_sheet(los_sheet_url, "Funder")
 
+# pull hierarchy key for top-level parents of subjects
+subject_types <- read_csv("~/Desktop/subject_types_top.csv")
+
 los_metrics_long <- bind_rows(
   
   # overall
