@@ -6,6 +6,7 @@ library(googlesheets4)
 library(tibble)
 library(purrr)
 library(tidyr)
+library(jsonlite)
 
 all_reg <- read_csv("~/Desktop/all_registrations_for_los_2026-03-04.csv")
 
