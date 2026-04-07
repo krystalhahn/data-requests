@@ -170,8 +170,8 @@ los_metrics_long <- bind_rows(
     unnest(attribute) %>%
     mutate(attribute = if_else(is.na(attribute), "Unspecified", attribute)) %>%
     left_join(subject_types %>% 
-                select(subject, parent_subject) %>% 
-                rename(attribute = subject, attribute_2 = parent_subject), 
+                select(subject, top_subject) %>% 
+                rename(attribute = subject, attribute_2 = top_subject), 
               by = "attribute") %>%
     summarize_long("lower-level subject", c("attribute", "attribute_2"))
 ) %>%
