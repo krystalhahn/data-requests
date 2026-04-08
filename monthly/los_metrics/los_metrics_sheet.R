@@ -287,6 +287,8 @@ walk(dims, ~ {
     los_metrics_wide <- los_metrics_wide %>% rename(!!.x$attr2_name := !!sym(id_cols[2]))
   }
   
+  # range_clear(ss = los_sheet_url, sheet = .x$name)
+  
   write_sheet(los_metrics_wide, los_sheet_url, sheet = .x$name)
 })
 
