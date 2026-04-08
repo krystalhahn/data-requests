@@ -371,7 +371,8 @@ pct_cols <- map(1:nrow(los_sheet_props), ~ {
   tab_name <- los_sheet_props$name[.x]
   tab_id   <- los_sheet_props$id[.x]
   
-  headers <- read_sheet(los_sheet_url, sheet = tab_name, n_max = 0) %>% names()
+  # skip README and merged metric (total, outputs, outcomes, LOS) rows
+  headers <- read_sheet(los_sheet_url, sheet = tab_name, n_max = 0, skip = 2) %>% names()
   
   pct_indices <- which(str_detect(headers, "_pct")) - 1
   
@@ -380,11 +381,14 @@ pct_cols <- map(1:nrow(los_sheet_props), ~ {
   list(sheet_id = tab_id, col_ranges = col_ranges)
 })
 
+# only format columns below the 3 header rows (README, merged metrics, measure columns)
 dimension_tab_requests <- map(pct_cols, ~ {
   tab <- .x
   map(tab$col_ranges, ~ list(
     repeatCell = list(
       range = list(sheetId = tab$sheet_id,
+                   startRowIndex = 3,
+                   endRowIndex = 2000,
                    startColumnIndex = .x[1],
                    endColumnIndex = .x[2]),
       cell = list(userEnteredFormat = list(
