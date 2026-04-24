@@ -58,6 +58,20 @@ email_list_from_pairs <- refined_pairs %>%
             reg_guids = sapply(list(reg_guid), function(x) paste(x, collapse = ", ")))
 # 119230 users
 
+## alternative: keeping only `accepted` registrations ----
+approved_refined_pairs <- pairs_created %>%
+  filter(moderation_state == 'accepted') %>%
+  filter(user_permissions == "['read', 'write', 'admin']") %>%
+  filter(!str_detect(connected_resources, "DATA|ANALYTIC_CODE|MATERIALS|SUPPLEMENTS"))
+# 335970 user-reg pairs
+
+approved_email_list_from_pairs <- approved_refined_pairs %>%
+  group_by(user_guid, user_email) %>%
+  summarize(reg_count = n(),
+            reg_guids = sapply(list(reg_guid), function(x) paste(x, collapse = ", ")))
+# 119149 users
+# written to separate tab below
+
 # email list directly from database ----
 # no wrangling necessary
 email_list_direct <- read_csv("~/Desktop/email_list_0418.csv")
@@ -75,3 +89,5 @@ compare_dfs(
 # email_list_sheet_url <- 
 
 write_sheet(email_list_from_pairs, email_list_sheet_url, sheet = "2026-04-18")
+
+write_sheet(approved_email_list_from_pairs, email_list_sheet_url, sheet = "accepted_2026-04-18")
