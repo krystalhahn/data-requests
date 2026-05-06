@@ -231,7 +231,11 @@ dimension_levels <- c("overall", "affiliated", "institution", "funded", "funder"
 ### write to Master sheet ----
 # current Master sheet pulled in before calculating change metrics
 
-month_cols <- c("December 2025", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December")
+current_year = as.character(year(floor_date(Sys.Date(), "year")))
+year_col <- paste0(current_year, " YTD")
+month_cols <- month.name
+prev_dec_col <- paste("December", as.numeric(current_year) - 1)
+num_cols <- c(prev_dec_col, month_cols, year_col)
 
 updated_master <- current_master %>%
   select(-!!current_month) %>%
@@ -244,7 +248,42 @@ updated_master <- current_master %>%
   arrange(dimension, attribute, metric, measure) %>%
   select(all_of(key_cols), all_of(month_cols), everything())
 
-write_sheet(updated_master, los_sheet_url, sheet = "Master")
+## adding yearly totals to Master tab ----
+updated_master_wtotals <- updated_master %>%
+  rowwise() %>%
+  mutate(
+    latest_n = if_else(
+      measure == "n",
+      dplyr::last(na.omit(c_across(all_of(month_cols)))),
+      NA_real_
+    ),
+    prev_dec_n = if_else(
+      measure == "n",
+      .data[[prev_dec_col]],
+      NA_real_
+    )
+  ) %>%
+  ungroup() %>%
+  group_by(dimension, metric, attribute, attribute_2) %>%
+  tidyr::fill(prev_dec_n, latest_n, .direction = "downup") %>%
+  rowwise() %>%
+  mutate(
+    
+    !!year_col := case_when(
+      measure == "n"        ~ latest_n,
+      measure == "n_change" ~ sum(c_across(all_of(month_cols)), na.rm = TRUE),
+      measure == "pct_change" ~ {
+        if (is.na(latest_n) || is.na(prev_dec_n) || prev_dec_n == 0) NA_real_
+        else round((latest_n - prev_dec_n) / prev_dec_n, 4)
+      },
+      measure == "pct_total" ~ dplyr::last(na.omit(c_across(all_of(month_cols)))),
+      TRUE ~ NA_real_
+    )
+  ) %>%
+  ungroup() %>%
+  select(-latest_n, -prev_dec_n)
+
+write_sheet(updated_master_wtotals, los_sheet_url, sheet = "Master")
 
 ## generate dimension data for individual dimension sheets ----
 
@@ -295,48 +334,6 @@ walk(dims, ~ {
   
   write_sheet(los_metrics_wide, los_sheet_url, sheet = .x$name)
 })
-
-## adding yearly totals to Master tab ----
-current_year = as.character(year(floor_date(Sys.Date(), "year")))
-year_col <- paste0(current_year, " YTD")
-month_cols <- month.name
-prev_dec_col <- paste("December", as.numeric(current_year) - 1)
-
-updated_master_wtotals <- updated_master %>%
-  rowwise() %>%
-  mutate(
-    latest_n = if_else(
-      measure == "n",
-      dplyr::last(na.omit(c_across(all_of(month_cols)))),
-      NA_real_
-    ),
-    prev_dec_n = if_else(
-      measure == "n",
-      .data[[prev_dec_col]],
-      NA_real_
-    )
-  ) %>%
-  ungroup() %>%
-  group_by(dimension, metric, attribute, attribute_2) %>%
-  tidyr::fill(prev_dec_n, latest_n, .direction = "downup") %>%
-  rowwise() %>%
-  mutate(
-    
-    !!year_col := case_when(
-      measure == "n"        ~ latest_n,
-      measure == "n_change" ~ sum(c_across(all_of(month_cols)), na.rm = TRUE),
-      measure == "pct_change" ~ {
-        if (is.na(latest_n) || is.na(prev_dec_n) || prev_dec_n == 0) NA_real_
-        else round((latest_n - prev_dec_n) / prev_dec_n, 4)
-      },
-      measure == "pct_total" ~ dplyr::last(na.omit(c_across(all_of(month_cols)))),
-      TRUE ~ NA_real_
-    )
-  ) %>%
-  ungroup() %>%
-  select(-latest_n, -prev_dec_n)
-
-write_sheet(updated_master_wtotals, los_sheet_url, sheet = "Master")
 
 ### adding funder_type to funder tab ----
 
