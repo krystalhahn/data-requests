@@ -337,6 +337,13 @@ purrr::walk(dims, ~ {
       rename(!!.x$attr2_name := !!sym(id_cols[2]))
   }
   
+  # add empty funder_type column to Funder tab that will be filled later
+  if (.x$name == "Funder") {
+    los_metrics_wide <- los_metrics_wide %>%
+      mutate(funder_type = NA) %>%
+      select(month, funder, funder_type, everything())
+  }
+  
   # write starting at row 4 to not overwrite headers
   googlesheets4::range_write(
     ss = los_sheet_url,
