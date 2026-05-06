@@ -8,7 +8,7 @@ library(purrr)
 library(tidyr)
 library(jsonlite)
 
-all_reg <- read_csv("~/Desktop/all_registrations_for_los_2026-03-04.csv")
+all_reg <- read_csv("~/Desktop/all_registrations_for_los_2026-05-04.csv")
 
 public_reg <- all_reg %>%
   filter(is_public, !is_deleted, !is.na(date_registered), moderation_state == "accepted", (spam_status != 2 | is.na(spam_status))) %>%
@@ -63,7 +63,8 @@ summarize_long <- function(df, dimension_name, grouping_variables = character(0)
 }
 
 # pull existing funders to determine new and existing funders below
-existing_funders <- read_sheet(los_sheet_url, "Funder")
+# set los_sheet_url variable
+current_funders <- read_sheet(los_sheet_url, "Funder", range = "B:B")
 
 # pull hierarchy key for top-level parents of subjects
 subject_types <- read_csv("~/Desktop/subject_types_top.csv")
