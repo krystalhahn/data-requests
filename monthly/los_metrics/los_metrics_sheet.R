@@ -249,7 +249,7 @@ updated_master <- current_master %>%
     measure = factor(measure, levels = measure_levels)
   ) %>% 
   arrange(dimension, attribute, metric, measure) %>%
-  select(all_of(key_cols), all_of(month_cols), everything())
+  select(all_of(key_cols), all_of(num_cols), everything())
 
 ## adding yearly totals to Master tab ----
 updated_master_wtotals <- updated_master %>%
@@ -380,7 +380,7 @@ pct_cols <- map(1:nrow(los_sheet_props), ~ {
   # skip README and merged metric (total, outputs, outcomes, LOS) rows
   headers <- read_sheet(los_sheet_url, sheet = tab_name, n_max = 0, skip = 2) %>% names()
   
-  pct_indices <- which(str_detect(headers, "_pct")) - 1
+  pct_indices <- which(str_detect(headers, "pct")) - 1
   
   col_ranges <- map(pct_indices, ~ c(.x, .x + 1))
   
