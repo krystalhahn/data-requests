@@ -286,6 +286,9 @@ updated_master_wtotals <- updated_master %>%
   ungroup() %>%
   select(-latest_n, -prev_dec_n)
 
+# clear values and formatting in Master sheet before writing
+range_clear(ss = los_sheet_url, sheet = "Master")
+
 write_sheet(updated_master_wtotals, los_sheet_url, sheet = "Master")
 
 ## generate dimension data for individual dimension sheets ----
@@ -305,7 +308,7 @@ dims <- list(
 )
 
 # write wide data to each dimension sheet
-walk(dims, ~ {
+purrr::walk(dims, ~ {
   
   id_cols <- .x$attr
   
@@ -327,15 +330,22 @@ walk(dims, ~ {
   
   # rename attribute columns if new names are provided
   if (!is.null(.x$attr1_name)) {
-    los_metrics_wide <- los_metrics_wide %>% rename(!!.x$attr1_name := !!sym(id_cols[1]))
+    los_metrics_wide <- los_metrics_wide %>% 
+      rename(!!.x$attr1_name := !!sym(id_cols[1]))
   }
   if (!is.null(.x$attr2_name) && length(id_cols) == 2) {
-    los_metrics_wide <- los_metrics_wide %>% rename(!!.x$attr2_name := !!sym(id_cols[2]))
+    los_metrics_wide <- los_metrics_wide %>% 
+      rename(!!.x$attr2_name := !!sym(id_cols[2]))
   }
   
-  # range_clear(ss = los_sheet_url, sheet = .x$name)
-  
-  write_sheet(los_metrics_wide, los_sheet_url, sheet = .x$name)
+  # write starting at row 4 to not overwrite headers
+  googlesheets4::range_write(
+    ss = test_sheet_url,
+    data = los_metrics_wide,
+    sheet = .x$name,
+    range = "A4",
+    col_names = FALSE
+  )
 })
 
 ### adding funder_type to funder tab ----
