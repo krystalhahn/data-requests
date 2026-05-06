@@ -291,6 +291,8 @@ range_clear(ss = los_sheet_url, sheet = "Master")
 
 write_sheet(updated_master_wtotals, los_sheet_url, sheet = "Master")
 
+write_csv(updated_master_wtotals, "~/Desktop/master_wfunders_2026-04.csv")
+
 ## generate dimension data for individual dimension sheets ----
 
 # define dimensions and their grouping attributes
