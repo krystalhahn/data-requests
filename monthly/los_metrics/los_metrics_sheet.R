@@ -287,9 +287,14 @@ updated_master_wtotals <- updated_master %>%
   select(-latest_n, -prev_dec_n)
 
 # clear values and formatting in Master sheet before writing
-range_clear(ss = los_sheet_url, sheet = "Master")
+master_props <- sheet_properties(los_sheet_url) %>% filter(name == "Master")
+last_row <- props$grid_rows
+last_col <- props$grid_columns
 
-write_sheet(updated_master_wtotals, los_sheet_url, sheet = "Master")
+range_clear(los_sheet_url, sheet = "Master", 
+            range = cell_limits(c(3, 1), c(last_row, last_col)))
+
+range_write(los_sheet_url, updated_master_wtotals, sheet = "Master", range = "A3", col_names = FALSE)
 
 write_csv(updated_master_wtotals, "~/Desktop/master_wfunders_2026-04.csv")
 
@@ -342,7 +347,7 @@ purrr::walk(dims, ~ {
   
   # write starting at row 4 to not overwrite headers
   googlesheets4::range_write(
-    ss = test_sheet_url,
+    ss = los_sheet_url,
     data = los_metrics_wide,
     sheet = .x$name,
     range = "A4",
