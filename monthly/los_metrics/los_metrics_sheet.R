@@ -286,14 +286,6 @@ updated_master_wtotals <- updated_master %>%
   ungroup() %>%
   select(-latest_n, -prev_dec_n)
 
-# clear values and formatting in Master sheet before writing
-master_props <- sheet_properties(los_sheet_url) %>% filter(name == "Master")
-last_row <- props$grid_rows
-last_col <- props$grid_columns
-
-range_clear(los_sheet_url, sheet = "Master", 
-            range = cell_limits(c(3, 1), c(last_row, last_col)))
-
 range_write(los_sheet_url, updated_master_wtotals, sheet = "Master", range = "A3", col_names = FALSE)
 
 write_csv(updated_master_wtotals, "~/Desktop/master_wfunders_2026-04.csv")
@@ -364,7 +356,7 @@ existing_funders <- updated_master %>%
            !is.na(.data[[prev_month]])) %>% 
   rename(funder = attribute) %>% distinct(funder)
 
-public_reg_funder <- read_sheet(los_sheet_url, sheet = "Funder")
+public_reg_funder <- read_sheet(los_sheet_url, sheet = "Funder", skip = 2)
 
 public_reg_funder_types <- public_reg_funder %>%
   mutate(
@@ -376,7 +368,7 @@ public_reg_funder_types <- public_reg_funder %>%
   ) %>%
   select(month, funder, funder_type, everything())
 
-write_sheet(public_reg_funder_types, los_sheet_url, sheet = "Funder")
+range_write(los_sheet_url, public_reg_funder_types, sheet = "Funder", range = "A4", col_names = FALSE)
 
 ## format sheet data ----
 # specifically, use a batch update API request to format percentage values
