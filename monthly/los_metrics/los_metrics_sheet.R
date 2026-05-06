@@ -184,9 +184,12 @@ table(is.na(los_metrics_long[[current_month]]))
 ### calculate change metrics (n_change, pct_change) ----
 key_cols <- c("dimension", "metric", "measure", "attribute", "attribute_2")
 
-current_master <- read_sheet(los_sheet_url, sheet = "Master",
-                             col_types = "cccccnnnnnnnnnnnnnn",
-                             skip = 1) 
+# replace with previous month's master tab with funders (saved separately)
+current_master <- read_csv("~/Desktop/master_wfunders_2026-03.csv")
+# # when funded/funders are included
+# current_master <- read_sheet(los_sheet_url, sheet = "Master",
+#                              col_types = "cccccnnnnnnnnnnnnnn",
+#                              skip = 1) 
 
 los_metrics_change <- los_metrics_long %>%
   left_join(
