@@ -231,6 +231,8 @@ dimension_levels <- c("overall", "affiliated", "institution", "funded", "funder"
 ### write to Master sheet ----
 # current Master sheet pulled in before calculating change metrics
 
+month_cols <- c("December 2025", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December")
+
 updated_master <- current_master %>%
   select(-!!current_month) %>%
   full_join(los_metrics_master, by = key_cols) %>%
@@ -240,7 +242,7 @@ updated_master <- current_master %>%
     measure = factor(measure, levels = measure_levels)
   ) %>% 
   arrange(dimension, attribute, metric, measure) %>%
-  select(all_of(key_cols), !!prev_month, !!current_month, everything())
+  select(all_of(key_cols), all_of(month_cols), everything())
 
 write_sheet(updated_master, los_sheet_url, sheet = "Master")
 
