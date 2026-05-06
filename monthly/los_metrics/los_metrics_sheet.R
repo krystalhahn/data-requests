@@ -63,7 +63,7 @@ summarize_long <- function(df, dimension_name, grouping_variables = character(0)
 }
 
 # pull existing funders to determine new and existing funders below
-# set los_sheet_url variable
+# set los_sheet_url variable as a copy of the previous month's snapshot sheet
 current_funders <- read_sheet(los_sheet_url, "Funder", range = "B:B")
 
 # pull hierarchy key for top-level parents of subjects
@@ -286,6 +286,7 @@ updated_master_wtotals <- updated_master %>%
   ungroup() %>%
   select(-latest_n, -prev_dec_n)
 
+# write to sheet preserving header rows
 range_write(los_sheet_url, updated_master_wtotals, sheet = "Master", range = "A3", col_names = FALSE)
 
 write_csv(updated_master_wtotals, "~/Desktop/master_wfunders_2026-04.csv")
@@ -354,6 +355,10 @@ purrr::walk(dims, ~ {
   )
 })
 
+# check that there are no rows at the bottom of each sheet with previous month's data (look for previous month's yyyy_mm in month column)
+
+# reorder rows in Funded tab: Funded, Existing funders, New funders, Unfunded
+
 ### adding funder_type to funder tab ----
 
 existing_funders <- updated_master %>% 
@@ -379,6 +384,10 @@ range_write(los_sheet_url, public_reg_funder_types, sheet = "Funder", range = "A
 
 ## format sheet data ----
 # specifically, use a batch update API request to format percentage values
+# AFTER copying contents into rolling sheet (Lifecycle Open Science (LOS) Metrics on the OSF)
+# Master: may need to convert everything to Automatic format before reformatting percentages
+
+# set los_sheet_url variable to rolling sheet
 
 los_sheet_id <- gs4_get(los_sheet_url)$spreadsheet_id
 
@@ -458,6 +467,8 @@ req <- request_generate(
 )
 
 request_make(req)
+
+# check Funder tab and that funder_type column was added correctly, no extra columns
 
 # Pre-addition of change metrics: individual sheets --> Master sheet ----
 
