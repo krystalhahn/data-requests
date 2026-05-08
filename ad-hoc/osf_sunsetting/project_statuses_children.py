@@ -1,10 +1,10 @@
-def get_project_statuses_children():
+def get_child_node_count_by_privacy():
     import csv
     import io
     from django.db.models import Q, Count
     from tqdm import tqdm
 
-    filename = "/tmp/project_statuses_children.csv"
+    filename = "/tmp/child_node_count_by_privacy.csv"
     COL_HEADERS = ['node_guid', 'is_root', 'type', 'content_type_pk', 'is_public', 'private_children', 'public_children']
     output = io.StringIO()
     writer = csv.DictWriter(output, COL_HEADERS)
