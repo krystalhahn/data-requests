@@ -5,7 +5,7 @@ def get_project_statuses_children():
     from tqdm import tqdm
 
     filename = "/tmp/project_statuses_children.csv"
-    COL_HEADERS = ['node_guid', 'is_public', 'private_children', 'public_children']
+    COL_HEADERS = ['node_guid', 'is_root', 'type', 'content_type_pk', 'is_public', 'private_children', 'public_children']
     output = io.StringIO()
     writer = csv.DictWriter(output, COL_HEADERS)
     writer.writeheader()
@@ -20,6 +20,9 @@ def get_project_statuses_children():
     for n in nodes.iterator():
         writer.writerow({
             'node_guid': n._id,
+            'is_root': n.root == n,
+            'type': n.type,
+            'content_type_pk': n.content_type_pk,
             'is_public': "public" if n.is_public else "private",
             'private_children': n.private_children,
             'public_children': n.public_children
