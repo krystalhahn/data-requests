@@ -52,5 +52,4 @@ mod_funders <- all_reg %>%
   unnest(c(funder, funder_identifier, funder_identifier_type)) %>%
   filter(funder_identifier_type == "ROR") %>%
   left_join(funder_map, by = "funder_identifier") %>%
-  filter(funder != new_funder) %>%
-  distinct(funder_identifier, funder, new_funder)
+  select(-reg_guid) %>% distinct()
