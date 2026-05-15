@@ -42,6 +42,7 @@ funder_map <- read_csv("~/Desktop/funder_mapping.csv", col_names = FALSE) %>%
   rename(funder_identifier = X1,
          new_funder = X2)
 
+# create mapping of existing funder name-ROR-new funder name
 mod_funders <- all_reg %>%
   select(reg_guid, funder, funder_identifier, funder_identifier_type) %>% distinct() %>% drop_na() %>%
   mutate(
@@ -53,3 +54,9 @@ mod_funders <- all_reg %>%
   filter(funder_identifier_type == "ROR") %>%
   left_join(funder_map, by = "funder_identifier") %>%
   select(-reg_guid) %>% distinct()
+
+# map new names to funder metrics
+mod_funder_metrics <- funder_metrics %>%
+  left_join(mod_funders, by = "funder") %>%
+  filter(funder != new_funder) %>%
+  select(funder, new_funder, everything())
