@@ -7,6 +7,10 @@ library(tibble)
 library(purrr)
 library(tidyr)
 
+# temporary fix for incomplete funder migration until permanent fix is applied in prod release
+# it appears that ROR IDs were migrated properly, but some names were not
+
+# read in most recent funder LOS metrics
 funder_metrics <- read_sheet(los_sheet_url, sheet = "Funder", skip = 2) %>%
   rename(total_n = `n...4`,
          total_n_change = `n_change...5`,
