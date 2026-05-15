@@ -1,4 +1,4 @@
-def get_child_node_count_by_privacy():
+def get_child_node_count_by_privacy(exclude_empty_guid=True):
     import csv
     import io
     from django.db.models import Q, Count
@@ -15,7 +15,13 @@ def get_child_node_count_by_privacy():
         public_children=Count('descendants', filter=Q(descendants__is_public=True))
     ).prefetch_related(None)
 
-    pbar = tqdm(total = nodes.count())
+    if exclude_empty_guid:
+        nodes = nodes.exclude(guids___id__isnull=True).exclude(guids___id='').prefetch_related(None)
+
+    total = Node.objects.prefetch_related(None).count()
+    if exclude_empty_guid:
+        total = Node.objects.exclude(guids___id__isnull=True).exclude(guids___id='').count()
+    pbar = tqdm(total=total)
 
     for n in nodes.iterator():
         writer.writerow({
