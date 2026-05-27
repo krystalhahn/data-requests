@@ -60,3 +60,16 @@ mod_funder_metrics <- funder_metrics %>%
   left_join(mod_funders, by = "funder") %>%
   filter(funder != new_funder) %>%
   select(funder, new_funder, everything())
+
+# applying fix to funder_metadata ----
+fm_original <- read_csv("~/Desktop/funder_metadata_2026-05-04.csv")
+
+fm_original_funders <- fm_original %>%
+  group_by(funder) %>%
+  summarize(record_n = n())
+
+fm_reconciled <- read_csv("~/Desktop/funder_metadata_reconciled_2026-05-09.csv")
+
+fm_reconciled_funders <- fm_reconciled %>%
+  group_by(funder) %>%
+  summarize(record_n = n())
