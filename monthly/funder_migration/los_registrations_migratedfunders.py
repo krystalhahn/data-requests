@@ -1,0 +1,93 @@
+# number of public registrations on the OSF
+# number of registrations with (at least 1) outputs in the related resources (data, code, materials) sections
+# number of registrations with at least 1 outcome linked in the related resource paper section
+# number of registrations with both an output and outcome linked (LOS)
+
+def get_all_registrations_for_los(cutoff, mapping_path):
+    import csv
+    import io
+    import datetime
+    from osf.utils.outcomes import ArtifactTypes
+    from osf.models import Identifier, OutcomeArtifact
+    from tqdm import tqdm
+    import json
+
+    funder_map = {}
+    with open(mapping_path, newline='\r\n') as mapfile:
+        mapreader = csv.reader(mapfile, delimiter=',', quotechar='"')
+        for row in mapreader:
+            funder_map[row[0]] = row[1]
+
+    filename = '/tmp/all_registrations_for_los.csv'
+    COL_HEADERS = ['reg_guid', 'author_guid', 'is_public', 'is_deleted', 'date_created', 'date_registered', 'moderation_state', 'retraction_state', 'spam_status', 
+                   'registry', 'template', 'connected_outputs', 'institution', 'subject', 'subject_parent', 'funder', 'funder_identifier', 'funder_identifier_type']
+    output = io.StringIO()
+    writer = csv.DictWriter(output, COL_HEADERS)
+    writer.writeheader()
+
+    cutoff_dt = datetime.datetime.fromisoformat(f"{cutoff}T00:00:00+00:00")
+
+    target_regs = Registration.objects.filter(created__lte=cutoff_dt)
+
+    pbar = tqdm(total=target_regs.count())
+
+    for reg in target_regs.iterator(chunk_size=1000):
+    
+        idents = reg.identifiers.all() if not 'file' in reg.type else reg.target.identifiers.all()
+        partifacts = sum([list(i.artifact_metadata.filter(artifact_type=ArtifactTypes.PRIMARY.value)) for i in idents], [])
+        outcomes = [pa.outcome for pa in partifacts]
+
+        connected_resources = []
+        ARTIFACT_TYPE_LABELS = dict(ArtifactTypes.choices())
+        for o in outcomes:
+            connected_artifacts = o.artifact_metadata.exclude(
+                artifact_type=ArtifactTypes.PRIMARY.value
+            ).filter(
+                Q(finalized=True) &
+                Q(created__lte=cutoff_dt) &
+                (Q(deleted__isnull=True) | Q(deleted__gt=cutoff_dt))
+            )
+            for artifact in connected_artifacts:
+                artifact_label = ARTIFACT_TYPE_LABELS.get(artifact.artifact_type,  str(artifact.artifact_type))
+                connected_resources.append(artifact_label)
+
+        gmr = GuidMetadataRecord.objects.filter(guid___id=reg._id).first()
+        funding_info = gmr.funding_info if gmr else []
+        funders = []
+        for f in funding_info:
+            funder_id_type = f['funder_identifier_type']
+            funder_id = f['funder_identifier']
+            funder_name = f['funder_name']
+            if funder_id_type == 'ROR' and funder_id in funder_map:
+                funder_name = funder_map[funder_id]
+            funders.append(funder_name)
+        funder_identifiers = [f['funder_identifier'] for f in funding_info] or None
+        funder_identifier_types = [f['funder_identifier_type'] for f in funding_info] or None
+
+        writer.writerow({
+            'reg_guid': reg._id,
+            'is_public': reg.is_public,
+            'is_deleted': reg.deleted is not None,
+            'date_created': reg.created,
+            'date_registered': reg.registered_date.date().isoformat(),
+            'moderation_state': reg.moderation_state,
+            'retraction_state': reg.retraction.state if reg.retraction else None,
+            'spam_status': reg.spam_status,
+            'author_guid': reg.creator._id,
+            'registry': reg.provider.name,
+            'template': reg.registered_schema.all()[0].name,
+            'connected_outputs': connected_resources,
+            'institution': json.dumps(list(reg.affiliated_institutions.values_list('name', flat=True)) if hasattr(reg, 'affiliated_institutions') else []),
+            'subject': json.dumps(list(reg.subjects.filter(parent_id__isnull=False).values_list('text', flat=True)) if hasattr(reg, 'subjects') else []),
+            'subject_parent': json.dumps(list(reg.subjects.filter(parent_id__isnull=True).values_list('text', flat=True)) if hasattr(reg, 'subjects') else []),
+            'funder': json.dumps(funders) if funders else None,
+            'funder_identifier': json.dumps(funder_identifiers) if funder_identifiers else None,
+            'funder_identifier_type': json.dumps(funder_identifier_types) if funder_identifier_types else None,
+        })
+        pbar.update()
+
+    pbar.close()
+    with open(filename, 'w') as writeFile:
+        writeFile.write(output.getvalue())
+
+    print(f"Output written to {filename}")
