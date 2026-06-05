@@ -124,7 +124,7 @@ repeat {
   subject_types_top <- resolved
 }
 
-write_csv(subject_types_top, "~/Desktop/subject_types_top.csv")
+write_csv(subject_types_top %>% rename(top_subject = parent_subject), "~/Desktop/subject_types_top.csv")
 
 # left non-top-level (parent_subject is NA) subjects alone: Areas or Regions, Earth and Life Sciences, Neuroscience, Sport and Exercise Science, Sport and Exercise Studies, Time Periods
 #
