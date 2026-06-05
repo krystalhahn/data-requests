@@ -102,14 +102,17 @@ top_subjects <- public_reg_subject_parent %>%
   distinct(subject_parent) %>%
   pull(subject_parent)
 
-subject_types_top <- subject_types %>%
+subject_types_clean <- subject_types %>%
+  mutate(parent_subject = ifelse(subject == "Law", NA, parent_subject))
+
+subject_types_top <- subject_types_clean %>%
   select(subject, parent_subject) %>%
   distinct()
 
 repeat {
   resolved <- subject_types_top %>%
     left_join(
-      subject_types %>% select(subject, parent_subject) %>%
+      subject_types_clean %>% select(subject, parent_subject) %>%
         rename(parent_subject = subject, grandparent = parent_subject),
       by = "parent_subject"
     ) %>%
