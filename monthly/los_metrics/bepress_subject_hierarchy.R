@@ -93,3 +93,38 @@ lower_subject_types_sm <- bind_rows(level_2_subjects_sm, level_3_subjects_sm)
 ### certain subdisciplines under Neuroscience have multiple objects in which the parent is Neuroscience OR Neurosciences
 
 write_csv(lower_subject_types_sm, "~/Desktop/subject_types_top.csv")
+
+# rebuild Bepress hierarchy considering subjects past level 3
+## ex. Mental Health previously has no top-level subject because 4th level: 
+## Mental Health > Health Psychology > Psychology > Social and Behavioral Sciences 
+
+top_subjects <- public_reg_subject_parent %>%
+  distinct(subject_parent) %>%
+  pull(subject_parent)
+
+subject_types_top <- subject_types %>%
+  select(subject, parent_subject) %>%
+  distinct()
+
+repeat {
+  resolved <- subject_types_top %>%
+    left_join(
+      subject_types %>% select(subject, parent_subject) %>%
+        rename(parent_subject = subject, grandparent = parent_subject),
+      by = "parent_subject"
+    ) %>%
+    mutate(parent_subject = ifelse(
+      !is.na(grandparent) & !parent_subject %in% top_subjects,
+      grandparent,
+      parent_subject
+    )) %>%
+    select(subject, parent_subject)
+  
+  if (identical(resolved, subject_types_top)) break
+  subject_types_top <- resolved
+}
+
+write_csv(subject_types_top, "~/Desktop/subject_types_top.csv")
+
+# left non-top-level (parent_subject is NA) subjects alone: Areas or Regions, Earth and Life Sciences, Neuroscience, Sport and Exercise Science, Sport and Exercise Studies, Time Periods
+#
