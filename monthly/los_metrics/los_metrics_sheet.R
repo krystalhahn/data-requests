@@ -434,8 +434,10 @@ dimension_tab_requests <- map(pct_cols, ~ {
 ### Master tab ----
 
 # read the Master sheet to find _pct row positions
-master <- read_sheet(los_sheet_url, sheet = "Master")
-pct_rows <- which(str_detect(master$`...3`, "pct"))
+master <- read_sheet(los_sheet_url, sheet = "Master",
+                     col_types = "cccccnnnnnnnnnnnnnn",
+                     skip = 1)
+pct_rows <- which(str_detect(master$measure, "pct")) + 1
 
 master_sheet_id <- sheet_properties(los_sheet_url) %>%
   filter(name == "Master") %>%
