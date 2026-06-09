@@ -48,6 +48,7 @@ def get_ppp_preprint_statuses_messages(provider, n=None):
     print(f"Output written to {filename}")
 
 # handles preprints in which the GUID is NA
+# "Based on the timing... these are both rejected versions"
 def get_ppp_preprint_statuses_messages(provider, n=None):
     import csv
     import io
