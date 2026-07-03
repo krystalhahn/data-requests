@@ -1,3 +1,17 @@
+# registrations ##########
+## non-spam
+## non-draft
+## non-pending
+## non-moderation rejected
+
+# fields #################
+## GUID
+## status (public, embargoed, etc.)
+## date submitted
+## embargo end date (if applicable)
+## moderation state (accepted, rejected, initial, pending)
+## approval status
+
 def get_limbo_registrations():
     import csv
     import io
@@ -34,3 +48,7 @@ def get_limbo_registrations():
         writeFile.write(output.getvalue())
 
     print(f"Output written to {filename}")
+
+# moderation_state: accepted, embargo, initial, pending, pending_embargo_termination, pending_withdraw_request, rejected, reverted, withdrawn
+# embargo_state: approved, completed, moderator_rejected, pending_moderation, rejected, unapproved, None
+# retraction_state: approved, moderation_rejected, pending_moderation, rejected, unapproved, None
