@@ -6,6 +6,7 @@ def generate_funder_metadata_csv(mapping_path):
     import csv
     import io
     from osf.utils.outcomes import ArtifactTypes
+    from tqdm import tqdm
 
     funder_map = {}
     with open(mapping_path, newline='\r\n') as mapfile:
@@ -18,7 +19,11 @@ def generate_funder_metadata_csv(mapping_path):
     output = io.StringIO()
     writer = csv.DictWriter(output, COL_HEADERS)
     writer.writeheader()
+
     qs = GuidMetadataRecord.objects.exclude(funding_info=[])
+
+    pbar = tqdm(total = qs.count())
+
     for gmr in qs:
         ref = gmr.guid.referent
         if hasattr(ref, 'is_public') and not ref.is_public:
@@ -27,10 +32,12 @@ def generate_funder_metadata_csv(mapping_path):
             continue
         if 'file' in ref.type and not ref.target.is_public:
             continue
+
         idents = ref.identifiers.all() if not 'file' in ref.type else ref.target.identifiers.all()
         partifacts = sum([list(i.artifact_metadata.filter(artifact_type=ArtifactTypes.PRIMARY.value)) for i in idents], [])
         outcomes = [pa.outcome for pa in partifacts]
         has_artifacts = any([o.artifact_metadata.exclude(artifact_type=ArtifactTypes.PRIMARY.value).filter(finalized=True, deleted__isnull=True).exists() for o in outcomes])
+        
         for fund_dict in gmr.funding_info:
 
             funder_id_type = fund_dict['funder_identifier_type']
@@ -51,6 +58,10 @@ def generate_funder_metadata_csv(mapping_path):
                 'hasConnectedResource': has_artifacts,
                 'visible_contributors': list(ref.contributor_set.filter(visible=True).values_list('user__guids___id', flat=True)) if hasattr(ref, 'contributor_set') else [],
             })
+        pbar.update()
+
+    pbar.close()
+    
     with open(filename, 'w') as writeFile:
         writeFile.write(output.getvalue())
 
