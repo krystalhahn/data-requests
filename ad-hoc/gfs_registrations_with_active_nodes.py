@@ -24,10 +24,13 @@ def get_gfs_regs_with_active_nodes(exclude_system_logs=False):
         
         linked_node = reg.registered_from
 
-        if exclude_system_logs:
-            latest_log = linked_node.logs.filter(user__isnull=False).order_by('-created').first() if linked_node else None
+        if linked_node:
+            logs = linked_node.logs.all()
+            if exclude_system_logs:
+                logs = logs.filter(user__isnull=False)
+            latest_log = logs.order_by('-created').first()
         else:
-            latest_log = linked_node.logs.order_by('-created').first() if linked_node else None
+            latest_log = None
 
         writer.writerow({
             'reg_id': reg._id,
