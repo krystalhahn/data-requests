@@ -57,6 +57,14 @@ for (col in cols) {
 # Column differs: node_is_active_3_mo 
 # Column differs: node_is_active_1_yr 
 
+table(gfs_regs_nosyslogs$node_is_active_3_mo)
+# FALSE  TRUE 
+# 406    63 
+
+table(gfs_regs_nosyslogs$node_is_active_1_yr)
+# FALSE  TRUE 
+# 219   250
+
 # rows where node_is_active_3_mo differs
 inner_join(gfs_regs_nosyslogs, gfs_regs, by = "reg_id", suffix = c("_test", "_gfs")) %>%
   filter(node_is_active_3_mo_test != node_is_active_3_mo_gfs) %>%
