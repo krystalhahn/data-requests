@@ -43,7 +43,7 @@ table(gfs_regs$node_is_active_1_yr)
 # 156   313 
 
 # after excluding system logs ----
-gfs_regs_nosyslogs <- read_csv("~/Desktop/gfs_regs_with_active_nodes_0704_syslogs_removed.csv")
+gfs_regs_nosyslogs <- read_csv("~/Desktop/gfs_regs_with_active_nodes_0704_nosyslogs.csv")
 
 cols <- names(gfs_regs_nosyslogs)[names(gfs_regs_nosyslogs) != "reg_id"]
 
