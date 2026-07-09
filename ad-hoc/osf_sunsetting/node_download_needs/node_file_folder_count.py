@@ -16,7 +16,7 @@ def get_node_file_folder_count():
         folder_count=Count('files', filter=Q(files__type__endswith='folder'), distinct=True),
     ).values('guids___id', 'is_public', 'spam_status', 'file_count', 'folder_count')
 
-    print("Counting")
+    print("Counting nodes")
     pbar = tqdm(total = nodes.count())
 
     print("Starting iteration")
