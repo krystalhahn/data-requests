@@ -5,7 +5,7 @@ def get_node_file_folder_count():
     from django.db.models import Sum, Count, Q
 
     filename = '/tmp/node_file_folder_count.csv'
-    COL_HEADERS = ['node_id', 'is_public', 'is_spam', 'calc_file_count', 'calc_folder_count']
+    COL_HEADERS = ['node_id', 'is_public', 'is_spam', 'file_count', 'folder_count']
     output = io.StringIO()
     writer = csv.DictWriter(output, COL_HEADERS)
     writer.writeheader()
