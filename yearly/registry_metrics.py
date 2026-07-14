@@ -1,3 +1,6 @@
+# example usage
+get_monthly_registration_metrics("2025-07", "2026-07")
+
 def get_monthly_registration_metrics(start_month, end_month):
     import csv
     import io
@@ -50,6 +53,10 @@ def get_monthly_registration_metrics(start_month, end_month):
         writeFile.write(output.getvalue())
 
     print(f"CSV file saved to {filename}")
+
+# example usage
+# community-operated registries (COR) metrics: DAM, RWE, YOUth (+ OSF)
+get_monthly_registry_metrics("2025-07", "2026-07", ("dam","rwe","youthstudy","osf"))
 
 def get_monthly_registry_metrics(start_month, end_month, targets=None):
     import csv
