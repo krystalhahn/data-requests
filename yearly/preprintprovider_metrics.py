@@ -6,7 +6,6 @@ def write_ppp_csvs(start_month, end_month, prov=None):
     import pytz
     from dateutil.relativedelta import relativedelta
     from tqdm import tqdm
-    from math import ceil
 
     if prov:
         filename = f'/tmp/{prov._id}_metrics.csv'
