@@ -1,4 +1,7 @@
-def write_ppp_csvs(start_month, end_month, prov=None):
+# example argument
+get_ppp_metrics("2025-07", "2026-07")
+
+def get_ppp_metrics(start_month, end_month, prov=None):
     import io
     import csv
     import pytz
