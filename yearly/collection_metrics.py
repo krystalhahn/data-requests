@@ -1,3 +1,6 @@
+# collection submissions
+# include all resource types
+
 collection_submissions_all = pd.DataFrame()
 collection_count = 0
 submission_count = 0
@@ -61,6 +64,8 @@ while url:
 
     url = json['links'].get('next')
 
+# collection linked nodes
+# include all resource types
 
 collection_nodes = pd.DataFrame()
 collection_count = 0
