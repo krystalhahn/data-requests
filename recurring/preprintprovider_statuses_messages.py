@@ -53,6 +53,7 @@ def get_ppp_preprint_statuses_messages(provider, n=None):
     import csv
     import io
     from tqdm import tqdm
+    import sys
 
     filename = f'/tmp/{provider._id}_preprint_statuses_messages.csv'
     COL_HEADERS = ['preprint_guid_ver', 'preprint_guid', 'preprint_version', 'machine_state', 'date_created', 'date_published', 'moderation_messages', 'moderator_info', 'message_count']
