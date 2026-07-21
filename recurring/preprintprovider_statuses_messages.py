@@ -65,7 +65,7 @@ def get_ppp_preprint_statuses_messages(provider, n=None):
     if n:
         preprints = preprints[:n]
 
-    pbar = tqdm(total=preprints.count())
+    pbar = tqdm(total=preprints.count(), file=sys.stdout, dynamic_ncols=True)
 
     for p in preprints:
 
