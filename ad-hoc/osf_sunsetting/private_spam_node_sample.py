@@ -1,3 +1,4 @@
+# dynamic version of function that checks for new keys in spam_data
 def get_private_spam_node_sample(sample_size=100):
     import io
     import csv
@@ -68,6 +69,7 @@ def get_private_spam_node_sample(sample_size=100):
 
     print(f"Output written to {filename}")
 
+# set fields explicitly
 def get_private_spam_node_sample(sample_size=100):
     import io
     import csv
