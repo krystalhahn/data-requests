@@ -1,3 +1,6 @@
+# example usage
+get_users_from_email_domain('uol', ['@london.ac.uk', '@student.london.ac.uk', '@londonexternal.ac.uk'])
+
 def get_users_from_email_domain(descriptor, domains):
     import io
     import csv
