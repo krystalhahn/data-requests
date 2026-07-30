@@ -8,7 +8,11 @@ def get_weekly_nodes_created(backup_cutoff, source):
     import time
 
     filename = f'/tmp/weekly_nodes_created_{source}.csv'
-    fieldnames = ['node_id', 'abstractnode_type', 'date_created', 'has_node_created_log', 'date_node_created_log', 'has_project_created_log', 'date_project_created_log']
+    fieldnames = ['node_id', 'abstractnode_type', 'date_created', 
+                  'has_node_created_log', 'date_node_created_log', 
+                  'has_project_created_log', 'date_project_created_log',
+                  'has_project_created_from_draft_reg_log', 'date_project_created_from_draft_reg_log',
+                  'has_created_from_log', 'date_created_from_log']
     output = io.StringIO()
     writer = csv.DictWriter(output, fieldnames)
     writer.writeheader()
@@ -23,6 +27,8 @@ def get_weekly_nodes_created(backup_cutoff, source):
         for n in tqdm(nodes, total=nodes.count()):
             node_created_log = n.logs.filter(action="node_created").order_by('created').first()
             project_created_log = n.logs.filter(action="project_created").order_by('created').first()
+            project_created_from_draft_reg_log = n.logs.filter(action="project_created_from_draft_reg").order_by('created').first()
+            created_from_log = n.logs.filter(action="created_from").order_by('created').first()
 
             writer.writerow({
                 'node_id': n._id,
@@ -31,10 +37,14 @@ def get_weekly_nodes_created(backup_cutoff, source):
                 'has_node_created_log': node_created_log is not None,
                 'date_node_created_log': node_created_log.created if node_created_log else None,
                 'has_project_created_log': project_created_log is not None,
-                'date_project_created_log': project_created_log.created if project_created_log else None
+                'date_project_created_log': project_created_log.created if project_created_log else None,
+                'has_project_created_from_draft_reg_log': project_created_from_draft_reg_log is not None,
+                'date_project_created_from_draft_reg_log': project_created_from_draft_reg_log.created if project_created_from_draft_reg_log else None,
+                'has_created_from_log': created_from_log is not None,
+                'date_created_from_log': created_from_log.created if created_from_log else None
             })
     elif source == "from_logs":
-        created_actions = ["node_created", "project_created"]
+        created_actions = ["node_created", "project_created", "project_created_from_draft_reg", "created_from"]
 
         logs = NodeLog.objects.filter(
             action__in=created_actions, created__gte=start, created__lt=end
@@ -54,6 +64,10 @@ def get_weekly_nodes_created(backup_cutoff, source):
                 'date_node_created_log': log.created if log.action == "node_created" else None,
                 'has_project_created_log': log.action == "project_created",
                 'date_project_created_log': log.created if log.action == "project_created" else None,
+                'has_project_created_from_draft_reg_log': log.action == "project_created_from_draft_reg",
+                'date_project_created_from_draft_reg_log': log.created if log.action == "project_created_from_draft_reg" else None,
+                'has_created_from_log': log.action == "created_from",
+                'date_created_from_log': log.created if log.action == "created_from" else None
             })
 
     with open(filename, 'w') as writeFile:
