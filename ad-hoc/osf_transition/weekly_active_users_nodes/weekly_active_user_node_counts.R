@@ -8,10 +8,10 @@ library(purrr)
 library(tidyr)
 
 # created ----
-## from 'created' field ----
+## from 'created' field from Node table ----
 nodes_created_field <- read_csv("~/Desktop/weekly_nodes_created_from_field.csv")
 
-## from logs ----
+## from relevant logs in NodeLog table ----
 # 'node_created', 'project_created', 'project_created_from_draft_reg', 'created_from'
 nodes_created_logs <- read_csv("~/Desktop/weekly_nodes_created_from_logs.csv",
                                col_types = cols(
@@ -43,10 +43,10 @@ filtered_nodes_created_logs %>%
   )
 
 # deleted ----
-## from 'deleted' field ----
+## from 'deleted' field from Node table ----
 nodes_deleted_field <- read_csv("~/Desktop/weekly_nodes_deleted_from_field.csv")
 
-## from logs ----
+## from relevant logs in NodeLog table ----
 # 'node_removed', 'project_deleted', 'confirm_spam'
 nodes_deleted_logs <- read_csv("~/Desktop/weekly_nodes_deleted_from_logs.csv")
 # includes both osf.node and osf.registration
