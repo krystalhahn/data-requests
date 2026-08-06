@@ -73,3 +73,15 @@ filtered_nodes_deleted_logs %>%
     names_to = "log_type",
     values_to = "count"
   )
+
+# made public ----
+## from 'made_public' logs in the NodeLog table
+## all nodes made public ----
+## regardless of whether there is a later 'made_private' log
+nodes_made_public_all <- read_csv("~/Desktop/weekly_nodes_made_public_all.csv") %>% 
+  filter(abstractnode_type == "osf.node")
+
+## nodes made public that were public by the end of the week ----
+## excluding nodes with later 'made_private' log
+nodes_made_public <- read_csv("~/Desktop/weekly_nodes_made_public_from_logs.csv") %>%
+  filter(abstractnode_type == "osf.node")
