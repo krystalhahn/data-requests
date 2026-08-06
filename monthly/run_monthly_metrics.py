@@ -1,6 +1,5 @@
 import csv
 from functools import wraps
-import logging
 import sys
 import time
 
@@ -621,30 +620,26 @@ def write_nps_users_insts(n=None):
 
 @timeit
 def main():
-    DATAREQ_PATH = "/Users/krystalhahn/data-requests-dev"
-    sys.path.append(DATAREQ_PATH)
-
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s [%(levelname)s] %(message)s",
-        handlers=[
-            logging.FileHandler("logs/monthly-extract.log"),
-            logging.StreamHandler(sys.stdout),
-        ],
-    )
-    logging.info("Starting monthly data extraction...")
-    logging.info("\tGenerating CEDAR metadata CSV...")
+    print("Starting monthly data extraction...")
+    print("Generating CEDAR metadata CSV...")
     generate_cedar_metadata_csv()
-    logging.info("\tGenerating content subjects CSV (including spam)...")
+    print()
+    print("Generating content subjects CSV (including spam)...")
     get_content_subjects(include_spam=True)
+    print()
+    print("Generating content subjects CSV (excluding spam)...")
     get_content_subjects(include_spam=False)
-    logging.info("\tGenerating funder metadata CSV...")
+    print()
+    print("Generating funder metadata CSV...")
     generate_funder_metadata_csv()
-    logging.info("\tGenerating NPS users CSV...")
+    print()
+    print("Generating NPS users CSV...")
     write_nps_users_csv()
-    logging.info("\tGenerating NPS users institutions CSV...")
+    print()
+    print("Generating NPS users institutions CSV...")
     write_nps_users_insts()
-    logging.info("\tMonthly data extraction completed.")
+    print()
+    print("Monthly data extraction completed.")
 
 
 if __name__ == "__main__":
