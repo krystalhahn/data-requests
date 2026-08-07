@@ -24,116 +24,6 @@ def timeit(func):
 
 
 @timeit
-def generate_cedar_metadata_csv():
-    from osf.models import CedarMetadataRecord
-    from osf.utils.outcomes import ArtifactTypes
-
-    filename = "/tmp/cedar_metadata.csv"
-    COL_HEADERS = [
-        "community_schema",
-        "type",
-        "resourceType",
-        "deleted",
-        "guid",
-        "title",
-        "created",
-        "subjects",
-        "institutions",
-        "hasConnectedResource",
-        "visible_contributors",
-    ]
-    output = io.StringIO()
-    writer = csv.DictWriter(output, COL_HEADERS)
-    writer.writeheader()
-
-    # fetch all CedarMetadataRecord objects
-    qs = CedarMetadataRecord.objects.all()
-
-    pbar = tqdm(total=qs.count())
-
-    for cmr in qs:
-        # retrieve the GUID associated with the CedarMetadataRecord
-        guid = cmr.guid
-
-        # retrieve the associated GuidMetadataRecord through the metadata_record field
-        gmr = getattr(guid, "metadata_record", None)
-
-        # retrieve the referent associated with the GUID
-        ref = guid.referent
-
-        # skip records based on privacy or publication status
-        if hasattr(ref, "is_public") and not ref.is_public:
-            continue
-        if ref.type == "osf.preprint" and not ref.is_published:
-            continue
-        if "file" in ref.type and not ref.target.is_public:
-            continue
-
-        # retrieve identifiers and artifacts
-        idents = (
-            ref.identifiers.all()
-            if "file" not in ref.type
-            else ref.target.identifiers.all()
-        )
-        partifacts = sum(
-            [
-                list(
-                    i.artifact_metadata.filter(
-                        artifact_type=ArtifactTypes.PRIMARY.value
-                    )
-                )
-                for i in idents
-            ],
-            [],
-        )
-        outcomes = [pa.outcome for pa in partifacts]
-
-        # check for connected resources
-        has_artifacts = any(
-            o.artifact_metadata.exclude(artifact_type=ArtifactTypes.PRIMARY.value)
-            .filter(finalized=True, deleted__isnull=True)
-            .exists()
-            for o in outcomes
-        )
-
-        writer.writerow(
-            {
-                "community_schema": cmr.template.schema_name,
-                "type": ref.type,
-                "resourceType": getattr(gmr, "resource_type_general", None),
-                "deleted": ref.is_deleted,
-                "guid": guid._id,
-                "title": getattr(ref, "title", None) or getattr(ref, "name", None),
-                "created": ref.created,
-                "subjects": list(ref.subjects.values_list("text", flat=True))
-                if hasattr(ref, "subjects")
-                else [],
-                "institutions": list(
-                    ref.affiliated_institutions.values_list("name", flat=True)
-                )
-                if hasattr(ref, "affiliated_institutions")
-                else [],
-                "hasConnectedResource": has_artifacts,
-                "visible_contributors": list(
-                    ref.contributor_set.filter(visible=True).values_list(
-                        "user__guids___id", flat=True
-                    )
-                )
-                if hasattr(ref, "contributor_set")
-                else [],
-            }
-        )
-
-        pbar.update(1)
-    pbar.close()
-
-    with open(filename, "w") as writeFile:
-        writeFile.write(output.getvalue())
-
-    print(f"Output written to {filename}")
-
-
-@timeit
 def get_content_subjects(include_spam=True, n=None):
     from osf.models import Subject, Node, Registration, Preprint
 
@@ -246,9 +136,126 @@ def get_content_subjects(include_spam=True, n=None):
     print(f"Output written to {filename}")
 
 
-def generate_funder_metadata_csv():
+@timeit
+def generate_cedar_metadata_csv():
+    from osf.models import CedarMetadataRecord
+    from osf.utils.outcomes import ArtifactTypes
+
+    filename = "/tmp/cedar_metadata.csv"
+    COL_HEADERS = [
+        "community_schema",
+        "type",
+        "resourceType",
+        "deleted",
+        "guid",
+        "title",
+        "created",
+        "subjects",
+        "institutions",
+        "hasConnectedResource",
+        "visible_contributors",
+    ]
+    output = io.StringIO()
+    writer = csv.DictWriter(output, COL_HEADERS)
+    writer.writeheader()
+
+    # fetch all CedarMetadataRecord objects
+    qs = CedarMetadataRecord.objects.all()
+
+    pbar = tqdm(total=qs.count())
+
+    for cmr in qs:
+        # retrieve the GUID associated with the CedarMetadataRecord
+        guid = cmr.guid
+
+        # retrieve the associated GuidMetadataRecord through the metadata_record field
+        gmr = getattr(guid, "metadata_record", None)
+
+        # retrieve the referent associated with the GUID
+        ref = guid.referent
+
+        # skip records based on privacy or publication status
+        if hasattr(ref, "is_public") and not ref.is_public:
+            continue
+        if ref.type == "osf.preprint" and not ref.is_published:
+            continue
+        if "file" in ref.type and not ref.target.is_public:
+            continue
+
+        # retrieve identifiers and artifacts
+        idents = (
+            ref.identifiers.all()
+            if "file" not in ref.type
+            else ref.target.identifiers.all()
+        )
+        partifacts = sum(
+            [
+                list(
+                    i.artifact_metadata.filter(
+                        artifact_type=ArtifactTypes.PRIMARY.value
+                    )
+                )
+                for i in idents
+            ],
+            [],
+        )
+        outcomes = [pa.outcome for pa in partifacts]
+
+        # check for connected resources
+        has_artifacts = any(
+            o.artifact_metadata.exclude(artifact_type=ArtifactTypes.PRIMARY.value)
+            .filter(finalized=True, deleted__isnull=True)
+            .exists()
+            for o in outcomes
+        )
+
+        writer.writerow(
+            {
+                "community_schema": cmr.template.schema_name,
+                "type": ref.type,
+                "resourceType": getattr(gmr, "resource_type_general", None),
+                "deleted": ref.is_deleted,
+                "guid": guid._id,
+                "title": getattr(ref, "title", None) or getattr(ref, "name", None),
+                "created": ref.created,
+                "subjects": list(ref.subjects.values_list("text", flat=True))
+                if hasattr(ref, "subjects")
+                else [],
+                "institutions": list(
+                    ref.affiliated_institutions.values_list("name", flat=True)
+                )
+                if hasattr(ref, "affiliated_institutions")
+                else [],
+                "hasConnectedResource": has_artifacts,
+                "visible_contributors": list(
+                    ref.contributor_set.filter(visible=True).values_list(
+                        "user__guids___id", flat=True
+                    )
+                )
+                if hasattr(ref, "contributor_set")
+                else [],
+            }
+        )
+
+        pbar.update(1)
+    pbar.close()
+
+    with open(filename, "w") as writeFile:
+        writeFile.write(output.getvalue())
+
+    print(f"Output written to {filename}")
+
+
+@timeit
+def generate_funder_metadata_csv(mapping_path=mapping_path):
     from osf.models import GuidMetadataRecord
     from osf.utils.outcomes import ArtifactTypes
+
+    funder_map = {}
+    with open(mapping_path, newline='\r\n') as mapfile:
+        mapreader = csv.reader(mapfile, delimiter=',', quotechar='"')
+        for row in mapreader:
+            funder_map[row[0]] = row[1]
 
     filename = "/tmp/funder_metadata.csv"
     COL_HEADERS = [
@@ -307,6 +314,13 @@ def generate_funder_metadata_csv():
         )
 
         for fund_dict in gmr.funding_info:
+            
+            funder_id_type = fund_dict['funder_identifier_type']
+            funder_id = fund_dict['funder_identifier']
+            funder_name = fund_dict['funder_name']
+            if funder_id_type == 'ROR' and funder_id in funder_map:
+                funder_name = funder_map[funder_id]
+
             writer.writerow(
                 {
                     "funder": fund_dict["funder_name"],
@@ -343,6 +357,7 @@ def generate_funder_metadata_csv():
     print(f"Output written to {filename}")
 
 
+@timeit
 # Optimized: Aggregates log entries to reduce memory overload
 # Needs to be merged with output of write_nps_users_insts() in nps_users_institutions.py
 def write_nps_users_csv(n=None):
@@ -577,6 +592,7 @@ def write_nps_users_csv(n=None):
     print(f"Output written to {filename}")
 
 
+@timeit
 def write_nps_users_insts(n=None):
     from osf.models import OSFUser, Institution
 
@@ -620,26 +636,27 @@ def write_nps_users_insts(n=None):
 
 @timeit
 def main():
-    print("Starting monthly data extraction...")
-    print("Generating CEDAR metadata CSV...")
-    generate_cedar_metadata_csv()
-    print()
+    print("Starting monthly data extraction...\n")
+
     print("Generating content subjects CSV (including spam)...")
     get_content_subjects(include_spam=True)
-    print()
-    print("Generating content subjects CSV (excluding spam)...")
+
+    print("\nGenerating content subjects CSV (excluding spam)...")
     get_content_subjects(include_spam=False)
-    print()
-    print("Generating funder metadata CSV...")
-    generate_funder_metadata_csv()
-    print()
-    print("Generating NPS users CSV...")
+    
+    print("\nGenerating CEDAR metadata CSV...")
+    generate_cedar_metadata_csv()
+
+    print("\nGenerating funder metadata CSV...")
+    generate_funder_metadata_csv(mapping_path)
+
+    print("\nGenerating NPS users CSV...")
     write_nps_users_csv()
-    print()
-    print("Generating NPS users institutions CSV...")
+
+    print("\nGenerating NPS users institutions CSV...")
     write_nps_users_insts()
-    print()
-    print("Monthly data extraction completed.")
+
+    print("\nMonthly data extraction completed.")
 
 
 if __name__ == "__main__":
