@@ -103,6 +103,20 @@ summarize_weekly_node_activity <- function(nodes_created_from_field_path,
       )
   }
   
+  print_log_counts <- function(log_counts) {
+    cat(strrep("-", 52), "\n")
+    cat(sprintf("%-45s %s\n", "log type", "count"))
+    cat(strrep("-", 52), "\n")
+    
+    for (i in seq_len(nrow(log_counts))) {
+      cat(sprintf(
+        "%-45s %d\n",
+        log_counts$log_type[i],
+        log_counts$count[i]
+      ))
+    }
+  }
+  
   # nodes created
   nodes_created_field <- read_csv(
     nodes_created_from_field_path,
@@ -151,40 +165,16 @@ summarize_weekly_node_activity <- function(nodes_created_from_field_path,
   
   # print counts
   cat("\n========== NODES CREATED ==========\n")
-  cat(
-    "'created' field:",
-    nrow(nodes_created_field),
-    "\n"
-  )
-  cat(
-    "creation logs:",
-    nrow(nodes_created_logs),
-    "\n"
-  )
-  print(created_log_counts)
+  cat(sprintf("%-45s %d\n", "'created' field:", nrow(nodes_created_field)))
+  cat(sprintf("%-45s %d\n", "creation logs:", nrow(nodes_created_logs)))
+  print_log_counts(created_log_counts)
   
   cat("\n========== NODES DELETED ==========\n")
-  cat(
-    "'deleted' field:",
-    nrow(nodes_deleted_field),
-    "\n"
-  )
-  cat(
-    "deletion logs:",
-    nrow(nodes_deleted_logs),
-    "\n"
-  )
-  print(deleted_log_counts)
+  cat(sprintf("%-45s %d\n", "'deleted' field:", nrow(nodes_deleted_field)))
+  cat(sprintf("%-45s %d\n", "deletion logs:", nrow(nodes_deleted_logs)))
+  print_log_counts(deleted_log_counts)
   
   cat("\n========== NODES MADE PUBLIC ==========\n")
-  cat(
-    "all 'made_public' logs:",
-    nrow(nodes_made_public_all),
-    "\n"
-  )
-  cat(
-    "no later 'made_private' log:",
-    nrow(nodes_made_public),
-    "\n"
-  )
+  cat(sprintf("%-45s %d\n", "all 'made_public' logs:", nrow(nodes_made_public_all)))
+  cat(sprintf("%-45s %d\n", "no later 'made_private' log:", nrow(nodes_made_public)))
 }
