@@ -81,3 +81,110 @@ nodes_made_public_all <- read_csv("~/Desktop/weekly_nodes_made_public_all.csv") 
 ## excluding nodes with later 'made_private' log
 nodes_made_public <- read_csv("~/Desktop/weekly_nodes_made_public_from_logs.csv") %>%
   filter(abstractnode_type == "osf.node")
+
+# create function to streamline aggregate active node counts ----
+summarize_weekly_node_activity <- function(nodes_created_from_field_path,
+                                           nodes_created_from_logs_path,
+                                           nodes_deleted_from_field_path,
+                                           nodes_deleted_from_logs_path,
+                                           nodes_made_public_all_path,
+                                           nodes_made_public_path) {
+  
+  get_log_counts <- function(logs) {
+    logs %>%
+      summarise(across(
+        starts_with("has_"),
+        ~ sum(.x, na.rm = TRUE)
+      )) %>%
+      pivot_longer(
+        everything(),
+        names_to = "log_type",
+        values_to = "count"
+      )
+  }
+  
+  # nodes created
+  nodes_created_field <- read_csv(
+    nodes_created_from_field_path,
+    show_col_types = FALSE
+  )
+  
+  nodes_created_logs <- read_csv(
+    nodes_created_from_logs_path,
+    col_types = cols(
+      date_node_created_log = col_datetime(),
+      date_project_created_log = col_datetime(),
+      date_created_from_log = col_datetime()
+    ),
+    show_col_types = FALSE
+  ) %>%
+    filter(abstractnode_type == "osf.node")
+  
+  created_log_counts <- get_log_counts(nodes_created_logs)
+  
+  # nodes deleted
+  nodes_deleted_field <- read_csv(
+    nodes_deleted_from_field_path,
+    show_col_types = FALSE
+  )
+  
+  nodes_deleted_logs <- read_csv(
+    nodes_deleted_from_logs_path,
+    show_col_types = FALSE
+  ) %>%
+    filter(abstractnode_type == "osf.node")
+  
+  deleted_log_counts <- get_log_counts(nodes_deleted_logs)
+  
+  # nodes made public
+  nodes_made_public_all <- read_csv(
+    nodes_made_public_all_path,
+    show_col_types = FALSE
+  ) %>%
+    filter(abstractnode_type == "osf.node")
+  
+  nodes_made_public <- read_csv(
+    nodes_made_public_path,
+    show_col_types = FALSE
+  ) %>%
+    filter(abstractnode_type == "osf.node")
+  
+  # print counts
+  cat("\n========== NODES CREATED ==========\n")
+  cat(
+    "'created' field:",
+    nrow(nodes_created_field),
+    "\n"
+  )
+  cat(
+    "creation logs:",
+    nrow(nodes_created_logs),
+    "\n"
+  )
+  print(created_log_counts)
+  
+  cat("\n========== NODES DELETED ==========\n")
+  cat(
+    "'deleted' field:",
+    nrow(nodes_deleted_field),
+    "\n"
+  )
+  cat(
+    "deletion logs:",
+    nrow(nodes_deleted_logs),
+    "\n"
+  )
+  print(deleted_log_counts)
+  
+  cat("\n========== NODES MADE PUBLIC ==========\n")
+  cat(
+    "all 'made_public' logs:",
+    nrow(nodes_made_public_all),
+    "\n"
+  )
+  cat(
+    "no later 'made_private' log:",
+    nrow(nodes_made_public),
+    "\n"
+  )
+}
