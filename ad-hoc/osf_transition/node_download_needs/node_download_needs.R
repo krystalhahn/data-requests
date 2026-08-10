@@ -62,3 +62,24 @@ write_sheet(file_count_buckets %>%
               mutate(file_count_bucket = factor(file_count_bucket, levels = bucket_levels)) %>%
               arrange(desc(is_public), desc(file_count_bucket)), 
             sheet_url, sheet = "file_count")
+
+## folder count buckets ----
+# 2, 3, 5 layers of folders
+folder_count_buckets <- file_folder_count %>%
+  mutate(folder_count_bucket = case_when(folder_count == 1 ~ "1 folder",
+                                         folder_count == 2 ~ "2 folders",
+                                         folder_count == 3 ~ "3 folders",
+                                         folder_count == 4 ~ "4 folders",
+                                         folder_count == 5 ~ "5 folders",
+                                         folder_count > 5 ~ ">5 folders",
+                                         .default = NA
+  )) %>%
+  group_by(is_public, folder_count_bucket) %>%
+  summarize(node_count = n())
+
+bucket_levels <- c("1 folder", "2 folders", "3 folders", "4 folders", "5 folders", ">5 folders")
+
+write_sheet(folder_count_buckets %>%
+              mutate(folder_count_bucket = factor(folder_count_bucket, levels = bucket_levels)) %>%
+              arrange(desc(is_public), desc(folder_count_bucket)), 
+            sheet_url, sheet = "folder_count")
