@@ -6,8 +6,6 @@ def get_weekly_nodes_made_public(backup_cutoff, exclude_later_made_private):
     import pytz
     from django.utils import timezone
 
-    filename = f'/tmp/weekly_nodes_made_public_from_logs.csv'
-
     fieldnames = [
         'node_id',
         'abstractnode_type',
@@ -25,6 +23,8 @@ def get_weekly_nodes_made_public(backup_cutoff, exclude_later_made_private):
 
     # specifically  "made_public" log is not followed by a "made_private" log
     if exclude_later_made_private:
+        filename = f'/tmp/weekly_nodes_made_public_from_logs.csv'
+
         actions = ["made_public", "made_private"]
 
         logs = (
@@ -72,6 +72,8 @@ def get_weekly_nodes_made_public(backup_cutoff, exclude_later_made_private):
 
     # regardless of whether there was a "made_private" log afterwards
     else:
+        filename = f'/tmp/weekly_nodes_made_public_all.csv'
+
         logs = (
         NodeLog.objects.filter(action="made_public", created__gte=start, created__lt=end)
         .select_related("node")
