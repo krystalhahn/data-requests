@@ -331,24 +331,24 @@ def get_weekly_nodes_made_public(backup_cutoff, exclude_later_made_private):
         NodeLog.objects.filter(action="made_public", created__gte=start, created__lt=end)
         .select_related("node")
         .order_by("node_id", "created")
-    )
+        )
 
-    seen_nodes = set()
+        seen_nodes = set()
 
-    for log in tqdm(logs, total=logs.count()):
-        if log.node is None or log.node_id in seen_nodes:
-            continue
+        for log in tqdm(logs, total=logs.count()):
+            if log.node is None or log.node_id in seen_nodes:
+                continue
 
-        seen_nodes.add(log.node_id)
+            seen_nodes.add(log.node_id)
 
-        writer.writerow({
-            "node_id": log.node._id,
-            "abstractnode_type": AbstractNode.objects.get(
-                guids___id=log.node._id
-            ).type,
-            "date_made_public_log": log.created,
-            "has_made_public_log": True
-        })
+            writer.writerow({
+                "node_id": log.node._id,
+                "abstractnode_type": AbstractNode.objects.get(
+                    guids___id=log.node._id
+                ).type,
+                "date_made_public_log": log.created,
+                "has_made_public_log": True
+            })
 
 
     with open(filename, "w") as writeFile:
