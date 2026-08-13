@@ -78,7 +78,7 @@ def get_weekly_nodes_made_public(backup_cutoff, exclude_later_made_private):
         NodeLog.objects.filter(action="made_public", created__gte=start, created__lt=end)
         .select_related("node")
         .order_by("node_id", "created")
-        )
+    )
 
         seen_nodes = set()
 
@@ -98,7 +98,7 @@ def get_weekly_nodes_made_public(backup_cutoff, exclude_later_made_private):
             })
 
 
-        with open(filename, "w") as writeFile:
-            writeFile.write(output.getvalue())
+    with open(filename, "w") as writeFile:
+        writeFile.write(output.getvalue())
 
-        print(f"Output written to {filename}")
+    print(f"Output written to {filename}")
