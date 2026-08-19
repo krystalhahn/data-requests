@@ -1,12 +1,8 @@
 def get_download_events():
-    import io
     import csv
-    from tqdm import tqdm
     from django.db import connection
 
     filename = "/tmp/download_events.csv"
-
-    output = io.StringIO()
 
     with connection.cursor() as cursor:
         cursor.execute("""
@@ -18,16 +14,24 @@ def get_download_events():
         # get column names from the query
         fieldnames = [column[0] for column in cursor.description]
 
-        writer = csv.DictWriter(output, fieldnames=fieldnames)
-        writer.writeheader()
+        with open(filename, "w", newline="") as file:
+            writer = csv.writer(file)
+            writer.writerow(fieldnames)
 
-        # fetch rows
-        rows = cursor.fetchall()
+            processed = 0
 
-        for row in tqdm(rows, total=len(rows)):
-            writer.writerow(dict(zip(fieldnames, row)))
+            while True:
+                rows = cursor.fetchmany(10000)
 
-    with open(filename, "w") as writeFile:
-        writeFile.write(output.getvalue())
+                if not rows:
+                    break
 
-    print(f"Output written to {filename}")
+                writer.writerows(rows)
+                processed += len(rows)
+
+                print(
+                    f"Processed {processed:,} rows",
+                    end="\r"
+                )
+
+    print(f"\nOutput written to {filename}")
