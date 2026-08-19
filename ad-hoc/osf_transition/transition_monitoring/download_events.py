@@ -2,8 +2,11 @@ def get_download_events():
     import csv
     from tqdm import tqdm
     from django.db import connection
+    from django.contrib.contenttypes.models import ContentType
 
     filename = "/tmp/download_events.csv"
+
+    user_content_type_id = ContentType.objects.get_for_model(OSFUser).id
 
     with connection.cursor() as cursor:
 
@@ -14,12 +17,19 @@ def get_download_events():
         """)
         total = cursor.fetchone()[0]
 
-        # get all download events
+        # get all download events and corresponding user GUID
         cursor.execute("""
-            SELECT *
-            FROM osf_downloadevent
-            ORDER BY id;
-        """)
+            SELECT
+                de.*,
+                g._id AS user_guid
+            FROM osf_downloadevent de
+            LEFT JOIN osf_osfuser u
+                ON de.user_id = u.id
+            LEFT JOIN osf_guid g
+                ON u.id = g.object_id
+                AND g.content_type_id = %s
+            ORDER BY de.id;
+        """, [user_content_type_id])
 
         # get column names
         fieldnames = [column[0] for column in cursor.description]
