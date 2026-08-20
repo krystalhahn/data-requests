@@ -68,6 +68,8 @@ while True:
             for tag in conversation.get("tags", [])
         ]
 
+        source = conversation.get("source", {})
+
         slim_conversation = {
             "id": conversation.get("id"),
             "threadsCount": conversation.get("threads"),
@@ -78,6 +80,8 @@ while True:
             "createdAt": conversation.get("createdAt"),
             "tags": tags,
             "customFields": custom_fields,
+            "source_type": source.get("type"),
+            "source_via": source.get("via"),
         }
 
         all_conversations.append(slim_conversation)
