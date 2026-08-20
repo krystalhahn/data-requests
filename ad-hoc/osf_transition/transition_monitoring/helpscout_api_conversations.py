@@ -2,7 +2,6 @@ import json
 import requests
 import os
 
-
 HELP_SCOUT_TOKEN = os.environ["HELP_SCOUT_TOKEN"]
 
 BASE_URL = "https://api.helpscout.net/v2/conversations/"
@@ -24,6 +23,7 @@ while True:
             "page": page,
             "status": "all",
             "query": "(createdAt:[2026-08-08T00:00:00Z TO *])",
+            "embed": "threads",
         }
     )
 
@@ -33,15 +33,15 @@ while True:
 
     conversations = data.get("_embedded", {}).get("conversations", [])
 
-    # Check pagination information
+    # check pagination information
     page_info = data.get("page", {})
     total_pages = page_info.get("totalPages", 1)
 
-    # Print total pages after first request
+    # print total pages after first request
     if page == 1:
         print(f"Total pages: {total_pages}")
 
-    # Keep only the fields we want
+    # keep only the fields we want
     for conversation in conversations:
 
         threads = [
@@ -82,14 +82,14 @@ while True:
 
         all_conversations.append(slim_conversation)
 
-    # Print progress every 10 pages
+    # print progress every 10 pages
     if page % 10 == 0:
         print(
             f"Fetched page {page} "
             f"({len(all_conversations)} conversations so far)"
         )
 
-    # Stop after the last page
+    # stop after the last page
     if page >= total_pages:
         break
 
@@ -99,7 +99,7 @@ while True:
 print(f"\nDone. Total conversations: {len(all_conversations)}")
 
 
-# Save as JSON
+# save as JSON
 with open("/tmp/helpscout_conversations.json", "w") as f:
     json.dump(all_conversations, f, indent=2)
 
