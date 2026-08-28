@@ -108,3 +108,131 @@ total_by_user_type <- downloads %>%
   ) %>%
   mutate(total_percent = round(total_count / sum(total_count)*100, 2)) %>%
   arrange(desc(user_type))
+
+# user buckets ----
+## by download count
+by_user_count_bucket <- downloads %>%
+  group_by(user_guid) %>%
+  summarize(total = n(), 
+            .groups = "drop") %>%
+  filter(!is.na(user_guid)) %>%
+  mutate(
+    count_bucket = case_when(
+      total < 10 ~ "<10 downloads",
+      total < 50 ~ "10+ downloads",
+      total < 100 ~ "50+ downloads",
+      total < 500 ~ "100+ downloads",
+      total >= 500 ~ "500+ downloads"
+    ),
+    count_bucket = factor(
+      count_bucket,
+      levels = c(
+        "<10 downloads", 
+        "10+ downloads", 
+        "50+ downloads", 
+        "100+ downloads", 
+        "500+ downloads"
+      )
+    )
+  ) %>%
+  group_by(count_bucket) %>%
+  summarize(user_count = n(),
+            .groups = "drop")
+
+## by download size
+by_user_size_bucket <- downloads %>%
+  group_by(user_guid) %>%
+  summarize(total_gb = round(sum(size_bytes) / 1e9, 2), 
+            .groups = "drop") %>%
+  filter(!is.na(user_guid)) %>%
+  mutate(
+    size_bucket = case_when(
+      total_gb < 5 ~ "<5 GB",
+      total_gb < 10 ~ "5+ GB",
+      total_gb < 25 ~ "10+ GB",
+      total_gb < 50 ~ "25+ GB",
+      total_gb < 100 ~ "50+ GB",
+      total_gb < 500 ~ "100+ GB",
+      total_gb >= 500 ~ "500+ GB"
+    ),
+    size_bucket = factor(
+      size_bucket,
+      levels = c(
+        "<5 GB", 
+        "5+ GB",
+        "10+ GB",
+        "25+ GB",
+        "50+ GB",
+        "100+ GB",
+        "500+ GB"
+      )
+    )
+  ) %>%
+  group_by(size_bucket) %>%
+  summarize(user_count = n(),
+            .groups = "drop")
+
+# project buckets ----
+## by download count
+by_project_count_bucket <- downloads %>%
+  filter(resource_type == "osf.node") %>%
+  group_by(resource_guid) %>%
+  summarize(total = n(), 
+            .groups = "drop") %>%
+  filter(!is.na(resource_guid)) %>%
+  mutate(
+    count_bucket = case_when(
+      total < 10 ~ "<10 downloads",
+      total < 50 ~ "10+ downloads",
+      total < 100 ~ "50+ downloads",
+      total < 500 ~ "100+ downloads",
+      total >= 500 ~ "500+ downloads"
+    ),
+    count_bucket = factor(
+      count_bucket,
+      levels = c(
+        "<10 downloads", 
+        "10+ downloads", 
+        "50+ downloads", 
+        "100+ downloads", 
+        "500+ downloads"
+      )
+    )
+  ) %>%
+  group_by(count_bucket) %>%
+  summarize(project_count = n(),
+            .groups = "drop")
+
+## by download size
+by_project_size_bucket <- downloads %>%
+  filter(resource_type == "osf.node") %>%
+  group_by(resource_guid) %>%
+  summarize(total_gb = round(sum(size_bytes) / 1e9, 2), 
+            .groups = "drop") %>%
+  filter(!is.na(resource_guid)) %>%
+  mutate(
+    size_bucket = case_when(
+      total_gb < 5 ~ "<5 GB",
+      total_gb < 10 ~ "5+ GB",
+      total_gb < 25 ~ "10+ GB",
+      total_gb < 50 ~ "25+ GB",
+      total_gb < 100 ~ "50+ GB",
+      total_gb < 500 ~ "100+ GB",
+      total_gb >= 500 ~ "500+ GB"
+    ),
+    size_bucket = factor(
+      size_bucket,
+      levels = c(
+        "<5 GB", 
+        "5+ GB",
+        "10+ GB",
+        "25+ GB",
+        "50+ GB",
+        "100+ GB",
+        "500+ GB"
+      )
+    )
+  ) %>%
+  group_by(size_bucket) %>%
+  summarize(project_count = n(),
+            .groups = "drop")
