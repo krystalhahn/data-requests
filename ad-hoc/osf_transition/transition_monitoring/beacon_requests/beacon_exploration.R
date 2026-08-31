@@ -46,6 +46,8 @@ conversations_wide <- conversations %>%
 beacon_pages <- conversations %>%
   filter(source_type == "beacon-v2") %>%
   mutate(
+    
+    # get the first note body with Site Information and Beacon History
     beacon_history = purrr::map_chr(
       threads,
       ~ .x %>%
@@ -55,30 +57,83 @@ beacon_pages <- conversations %>%
         first()
     ),
     
-    # Page where the Beacon was opened
-    beacon_opened = str_extract(
+    # parse beacon HTML
+    beacon_html = purrr::map(
       beacon_history,
-      "Beacon opened on .*"
+      ~ rvest::read_html(.x)
     ),
     
-    beacon_page_name = str_extract(
+    # page where the beacon was opened
+    beacon_opened = purrr::map_chr(
+      beacon_html,
+      ~ .x %>%
+        rvest::html_elements(".c-BeaconHistoryTimelineListItem") %>%
+        rvest::html_text2() %>%
+        stringr::str_subset("^Beacon opened on") %>%
+        first()
+    ),
+    
+    beacon_page_name = stringr::str_extract(
       beacon_opened,
       "(?<=Beacon opened on ).*?(?= / https?://)"
     ),
     
-    beacon_page_link = str_extract(
+    beacon_page_link = stringr::str_extract(
       beacon_opened,
       "https?://\\S+"
     ),
     
-    # Beacon/site information
-    beacon_id = str_extract(
-      beacon_history,
-      "(?<=Beacon ID</td>\\s*<td[^>]*>).*?(?=</td>)"
+    # Site Information
+    beacon_id = purrr::map_chr(
+      beacon_html,
+      ~ {
+        cells <- .x %>%
+          rvest::html_elements("td") %>%
+          rvest::html_text2()
+        
+        cells[match("Beacon ID", cells) + 1]
+      }
     ),
     
-    beacon_current_page = str_extract(
-      beacon_history,
-      "(?<=Current Page</td>\\s*<td[^>]*>).*?(?=</td>)"
+    beacon_current_page = purrr::map_chr(
+      beacon_html,
+      ~ {
+        cells <- .x %>%
+          rvest::html_elements("td") %>%
+          rvest::html_text2()
+        
+        cells[match("Current Page", cells) + 1]
+      }
+    ),
+    
+    beacon_current_page_name = stringr::str_extract(
+      beacon_current_page,
+      ".*?(?= / https?://)"
+    ),
+    
+    beacon_current_page_link = stringr::str_extract(
+      beacon_current_page,
+      "https?://\\S+"
+    ),
+    
+    # last page viewed in Beacon History
+    beacon_last_page = purrr::map_chr(
+      beacon_html,
+      ~ .x %>%
+        rvest::html_elements(".c-BeaconHistoryTimelineListItem") %>%
+        rvest::html_text2() %>%
+        stringr::str_subset("^Viewed ") %>%
+        last()
+    ),
+    
+    beacon_last_page_name = stringr::str_extract(
+      beacon_last_page,
+      "(?<=Viewed ).*?(?= / https?://)"
+    ),
+    
+    beacon_last_page_link = stringr::str_extract(
+      beacon_last_page,
+      "https?://\\S+"
     )
-  )
+  ) %>%
+  select(-beacon_html)
