@@ -51,18 +51,34 @@ beacon_pages <- conversations %>%
       ~ .x %>%
         filter(type == "note") %>%
         slice_min(createdAt, n = 1) %>%
-        pull(body)
+        pull(body) %>%
+        first()
     ),
+    
+    # Page where the Beacon was opened
     beacon_opened = str_extract(
       beacon_history,
       "Beacon opened on .*"
     ),
+    
     beacon_page_name = str_extract(
       beacon_opened,
       "(?<=Beacon opened on ).*?(?= / https?://)"
     ),
+    
     beacon_page_link = str_extract(
       beacon_opened,
       "https?://\\S+"
+    ),
+    
+    # Beacon/site information
+    beacon_id = str_extract(
+      beacon_history,
+      "(?<=Beacon ID</td>\\s*<td[^>]*>).*?(?=</td>)"
+    ),
+    
+    beacon_current_page = str_extract(
+      beacon_history,
+      "(?<=Current Page</td>\\s*<td[^>]*>).*?(?=</td>)"
     )
   )
