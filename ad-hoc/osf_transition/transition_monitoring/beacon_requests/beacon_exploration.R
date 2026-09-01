@@ -41,7 +41,14 @@ custom_fields_wide <- conversations %>%
 
 conversations_wide <- conversations %>%
   select(-customFields) %>%
-  left_join(custom_fields_wide, by = "id")
+  left_join(custom_fields_wide, by = "id") %>%
+  filter(
+    Product != "Other",
+    Product != "N/a",
+    `Main Themes` != "Other",
+    `Main Themes` != "N/A",
+    !str_detect(tags, "remove_report") | is.na(tags)
+  )
 
 # extract beacon pages from Site Information and Beacon History ----
 beacon_pages <- conversations_wide %>%
