@@ -200,7 +200,7 @@ beacon_pages_cleaned <- beacon_pages %>%
     across(
       ends_with("_page_name_eng"),
       ~ if_else(
-        get(sub("_name_eng$", "_link", cur_column())) == "https://help.osf.io/search",
+        str_detect(.x, "Search results"),
         "Search results...",
         .x
       )
