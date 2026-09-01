@@ -43,7 +43,8 @@ conversations_wide <- conversations %>%
   select(-customFields) %>%
   left_join(custom_fields_wide, by = "id")
 
-beacon_pages <- conversations %>%
+# extract beacon pages from Site Information and Beacon History ----
+beacon_pages <- conversations_wide %>%
   filter(source_type == "beacon-v2") %>%
   mutate(
     
@@ -138,9 +139,72 @@ beacon_pages <- conversations %>%
   ) %>%
   select(-beacon_html)
 
+# cleaning up non-EN page names ----
+page_name_link_key <- beacon_pages %>%
+  select(
+    beacon_page_name, beacon_page_link,
+    beacon_current_page_name, beacon_current_page_link,
+    beacon_last_page_name, beacon_last_page_link
+  ) %>%
+  pivot_longer(
+    everything(),
+    names_to = c("page_type", ".value"),
+    names_pattern = "beacon_(page|current_page|last_page)_(name|link)"
+  ) %>%
+  select(page_name = name, page_link = link) %>%
+  distinct() %>%
+  mutate(
+    cleaned_page_link = str_extract(page_link, "https?://[^#?\\s]+"),
+    lang = detect_language(page_name)) %>%
+  distinct(page_name, cleaned_page_link, lang) %>%
+  group_by(cleaned_page_link) %>%
+  mutate(
+    eng_page_name = page_name[lang == "en"][1]
+  ) %>%
+  ungroup()
+
+beacon_pages_cleaned <- beacon_pages %>%
+  select(-beacon_page_link, -beacon_current_page_link, -beacon_last_page_link) %>%
+  left_join(
+    page_name_link_key %>%
+      rename(
+        beacon_page_link = cleaned_page_link,
+        beacon_page_name_eng = eng_page_name
+      ),
+    by = c("beacon_page_name" = "page_name")
+  ) %>%
+  left_join(
+    page_name_link_key %>%
+      rename(
+        beacon_current_page_link = cleaned_page_link,
+        beacon_current_page_name_eng = eng_page_name
+      ),
+    by = c("beacon_current_page_name" = "page_name")
+  ) %>%
+  left_join(
+    page_name_link_key %>%
+      rename(
+        beacon_last_page_link = cleaned_page_link,
+        beacon_last_page_name_eng = eng_page_name
+      ),
+    by = c("beacon_last_page_name" = "page_name")
+  ) %>%
+  mutate(
+    across(
+      ends_with("_page_name_eng"),
+      ~ if_else(
+        get(sub("_name_eng$", "_link", cur_column())) == "https://help.osf.io/search",
+        "Search results...",
+        .x
+      )
+    )
+  ) %>%
+  select(-beacon_page_name, -beacon_current_page_name, -beacon_last_page_name,
+         -lang, -lang.x, -lang.y)
+
 # weekly beacon pages ----
 ## pages the beacon was opened on ----
-opened_pages <- beacon_pages %>%
+opened_pages <- beacon_pages_cleaned %>%
   mutate(
     created = as.POSIXct(createdAt, tz = "UTC"),
     week = case_when(
@@ -152,19 +216,22 @@ opened_pages <- beacon_pages %>%
     )
   ) %>%
   filter(!is.na(week)) %>%
-  group_by(week, beacon_page_name) %>%
+  group_by(week, beacon_page_name_eng) %>%
   summarise(count = n(),
             .groups = "drop") %>%
   pivot_wider(
     names_from = week,
     values_from = count
   ) %>%
-  rename(page_name = beacon_page_name) %>%
+  rename(page_name = beacon_page_name_eng) %>%
   select(page_name, `8/9-8/15`, `8/16-8/22`) %>%
-  arrange(desc(`8/9-8/15`))
+  arrange(
+    page_name == "Search results...",
+    desc(`8/9-8/15`)
+  )
 
 ## pages beacon requests were submitted on ----
-submit_pages <- beacon_pages %>%
+submit_pages <- beacon_pages_cleaned %>%
   mutate(
     created = as.POSIXct(createdAt, tz = "UTC"),
     week = case_when(
@@ -176,13 +243,16 @@ submit_pages <- beacon_pages %>%
     )
   ) %>%
   filter(!is.na(week)) %>%
-  group_by(week, beacon_last_page_name) %>%
+  group_by(week, beacon_last_page_name_eng) %>%
   summarise(count = n(),
             .groups = "drop") %>%
   pivot_wider(
     names_from = week,
     values_from = count
   ) %>%
-  rename(page_name = beacon_last_page_name) %>%
+  rename(page_name = beacon_last_page_name_eng) %>%
   select(page_name, `8/9-8/15`, `8/16-8/22`) %>%
-  arrange(desc(`8/9-8/15`))
+  arrange(
+    page_name == "Search results...",
+    desc(`8/9-8/15`)
+  )
