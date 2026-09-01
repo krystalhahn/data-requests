@@ -137,3 +137,52 @@ beacon_pages <- conversations %>%
     )
   ) %>%
   select(-beacon_html)
+
+# weekly beacon pages ----
+## pages the beacon was opened on ----
+opened_pages <- beacon_pages %>%
+  mutate(
+    created = as.POSIXct(createdAt, tz = "UTC"),
+    week = case_when(
+      created >= as.POSIXct("2026-08-09 00:00:00", tz = "UTC") &
+        created < as.POSIXct("2026-08-16 00:00:00", tz = "UTC") ~ "8/9-8/15",
+      created >= as.POSIXct("2026-08-16 00:00:00", tz = "UTC") &
+        created < as.POSIXct("2026-08-23 00:00:00", tz = "UTC") ~ "8/16-8/22",
+      .default = NA_character_
+    )
+  ) %>%
+  filter(!is.na(week)) %>%
+  group_by(week, beacon_page_name) %>%
+  summarise(count = n(),
+            .groups = "drop") %>%
+  pivot_wider(
+    names_from = week,
+    values_from = count
+  ) %>%
+  rename(page_name = beacon_page_name) %>%
+  select(page_name, `8/9-8/15`, `8/16-8/22`) %>%
+  arrange(desc(`8/9-8/15`))
+
+## pages beacon requests were submitted on ----
+submit_pages <- beacon_pages %>%
+  mutate(
+    created = as.POSIXct(createdAt, tz = "UTC"),
+    week = case_when(
+      created >= as.POSIXct("2026-08-09 00:00:00", tz = "UTC") &
+        created < as.POSIXct("2026-08-16 00:00:00", tz = "UTC") ~ "8/9-8/15",
+      created >= as.POSIXct("2026-08-16 00:00:00", tz = "UTC") &
+        created < as.POSIXct("2026-08-23 00:00:00", tz = "UTC") ~ "8/16-8/22",
+      .default = NA_character_
+    )
+  ) %>%
+  filter(!is.na(week)) %>%
+  group_by(week, beacon_last_page_name) %>%
+  summarise(count = n(),
+            .groups = "drop") %>%
+  pivot_wider(
+    names_from = week,
+    values_from = count
+  ) %>%
+  rename(page_name = beacon_last_page_name) %>%
+  select(page_name, `8/9-8/15`, `8/16-8/22`) %>%
+  arrange(desc(`8/9-8/15`))
