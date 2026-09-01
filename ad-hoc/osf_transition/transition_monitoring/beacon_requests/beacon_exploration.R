@@ -5,7 +5,7 @@ library(purrr)
 
 # help desk conversations
 conversations <- fromJSON(
-  "~/Desktop/helpscout_conversations_0825.json",
+  "~/Desktop/helpscout_conversations_0831.json",
   flatten = TRUE
 )
 
@@ -219,6 +219,8 @@ opened_pages <- beacon_pages_cleaned %>%
         created < as.POSIXct("2026-08-16 00:00:00", tz = "UTC") ~ "8/9-8/15",
       created >= as.POSIXct("2026-08-16 00:00:00", tz = "UTC") &
         created < as.POSIXct("2026-08-23 00:00:00", tz = "UTC") ~ "8/16-8/22",
+      created >= as.POSIXct("2026-08-23 00:00:00", tz = "UTC") &
+        created < as.POSIXct("2026-08-30 00:00:00", tz = "UTC") ~ "8/23-8/29",
       .default = NA_character_
     )
   ) %>%
@@ -231,14 +233,14 @@ opened_pages <- beacon_pages_cleaned %>%
     values_from = count
   ) %>%
   rename(page_name = beacon_page_name_eng) %>%
-  select(page_name, `8/9-8/15`, `8/16-8/22`) %>%
+  select(page_name, `8/9-8/15`, `8/16-8/22`, `8/23-8/29`) %>%
   arrange(
     page_name == "Search results...",
     desc(`8/9-8/15`)
   )
 
 ## pages beacon requests were submitted on ----
-submit_pages <- beacon_pages_cleaned %>%
+submitted_pages <- beacon_pages_cleaned %>%
   mutate(
     created = as.POSIXct(createdAt, tz = "UTC"),
     week = case_when(
@@ -246,6 +248,8 @@ submit_pages <- beacon_pages_cleaned %>%
         created < as.POSIXct("2026-08-16 00:00:00", tz = "UTC") ~ "8/9-8/15",
       created >= as.POSIXct("2026-08-16 00:00:00", tz = "UTC") &
         created < as.POSIXct("2026-08-23 00:00:00", tz = "UTC") ~ "8/16-8/22",
+      created >= as.POSIXct("2026-08-23 00:00:00", tz = "UTC") &
+        created < as.POSIXct("2026-08-30 00:00:00", tz = "UTC") ~ "8/23-8/29",
       .default = NA_character_
     )
   ) %>%
@@ -258,7 +262,7 @@ submit_pages <- beacon_pages_cleaned %>%
     values_from = count
   ) %>%
   rename(page_name = beacon_last_page_name_eng) %>%
-  select(page_name, `8/9-8/15`, `8/16-8/22`) %>%
+  select(page_name, `8/9-8/15`, `8/16-8/22`, `8/23-8/29`) %>%
   arrange(
     page_name == "Search results...",
     desc(`8/9-8/15`)
