@@ -405,3 +405,53 @@ download_metrics_cumulative <- get_download_metrics(
   "2026-08-23",
   cumulative = TRUE
 )
+
+# write to sheet ----
+## set transition_sheet_url
+
+existing_dl_master <- read_sheet(transition_sheet_url, sheet = "Downloads")
+
+# find which rows are new
+new_rows <- download_metrics %>%
+  anti_join(existing_dl_master, by = key_cols)
+# unless more fields are captured, downloads should have no new rows
+
+# find which rows are existing
+existing_rows <- download_metrics %>%
+  semi_join(existing_dl_master, by = key_cols)
+
+current_week <- as.character(floor_date(Sys.Date(), "week", week_start = 7) - weeks(1))
+
+# check that existing rows are in the same order as the existing_master sheet
+order_check <- existing_rows %>%
+  select(all_of(key_cols)) %>%
+  mutate(row_num = row_number()) %>%
+  left_join(
+    existing_dl_master %>% mutate(sheet_row = row_number()),
+    by = key_cols
+  )
+
+# flag any mismatches
+mismatches <- order_check %>% filter(row_num != sheet_row)
+print(paste("Mismatched rows:", nrow(mismatches)))
+
+existing_column <- existing_dl_master %>%
+  left_join(existing_rows, by = key_cols) %>%
+  select(!!current_week)
+
+# helper function to generate column letter
+col_to_letter <- function(n) {
+  paste0(LETTERS[(n - 1) %% 26 + 1])  # works for single letter columns
+}
+
+first_empty_col <- ncol(existing_dl_master) + 1
+
+# write current week values to existing rows only
+# same order as the sheet (so previous steps are crucial)
+range_write(
+  transition_sheet_url,
+  existing_column,
+  sheet = "Downloads",
+  range = paste0(col_to_letter(first_empty_col), "1"), 
+  col_names = TRUE
+)
