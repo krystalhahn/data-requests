@@ -291,6 +291,8 @@ current_week <- as.character(floor_date(Sys.Date(), "week", week_start = 7) - we
 existing_cols <- names(existing_conv_master)
 week_col_index <- which(sheet_cols == current_week)
 
+# get current week's column for existing rows
+# backfill NA values with 0
 existing_column <- existing_conv_master %>%
   left_join(existing_rows, by = key_cols) %>%
   select(!!current_week) %>%
@@ -301,6 +303,8 @@ existing_column <- existing_conv_master %>%
     )
   )
 
+# get current week's new rows
+# backfill NA values with 0
 new_rows_to_write <- existing_conv_master[0, ] %>%
   mutate(attribute_2 = as.character(attribute_2)) %>%
   bind_rows(
