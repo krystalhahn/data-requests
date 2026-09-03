@@ -275,3 +275,70 @@ conversation_metrics_cumulative <- get_conversation_metrics(
   end = "2026-08-23",
   cumulative = TRUE
 )
+
+# write to sheet ----
+## set transition_sheet_url
+existing_conv_master <- read_sheet(transition_sheet_url, sheet = "Help desk conversations")
+
+new_rows <- conversation_metrics %>%
+  anti_join(existing_conv_master, by = key_cols)
+
+existing_rows <- conversation_metrics %>%
+  semi_join(existing_conv_master, by = key_cols)
+
+current_week <- as.character(floor_date(Sys.Date(), "week", week_start = 7) - weeks(1))
+
+existing_cols <- names(existing_conv_master)
+week_col_index <- which(sheet_cols == current_week)
+
+existing_column <- existing_conv_master %>%
+  left_join(existing_rows, by = key_cols) %>%
+  select(!!current_week) %>%
+  mutate(
+    across(
+      everything(),
+      ~ replace_na(.x, 0)
+    )
+  )
+
+new_rows_to_write <- existing_conv_master[0, ] %>%
+  mutate(attribute_2 = as.character(attribute_2)) %>%
+  bind_rows(
+    new_rows %>%
+      mutate(attribute_2 = as.character(attribute_2))
+  ) %>%
+  mutate(
+    across(
+      -all_of(key_cols),
+      ~ tidyr::replace_na(.x, 0)
+    )
+  )
+
+# helper function to generate column letter
+col_to_letter <- function(n) {
+  paste0(LETTERS[(n - 1) %% 26 + 1])  # works for single letter columns
+}
+
+first_empty_col <- ncol(existing_conv_master) + 1
+
+# write current week values to existing rows only
+#  same order as the sheet (so previous steps are crucial)
+range_write(
+  transition_sheet_url,
+  existing_column,
+  sheet = "Help desk conversations",
+  range = paste0(col_to_letter(first_empty_col), "1"), 
+  col_names = TRUE
+)
+
+# append new rows at the bottom
+if (nrow(new_rows) > 0) {
+  last_row <- nrow(existing_conv_master) + 1
+  range_write(
+    transition_sheet_url,
+    new_rows_to_write,
+    sheet = "Help desk conversations",
+    range = paste0("A", last_row + 1),
+    col_names = FALSE
+  )
+}
