@@ -185,6 +185,14 @@ get_conversation_metrics <- function(
         "Main Themes",
         "main_theme"
       )
+      
+      # by OSF Transition Theme ----
+      
+      by_transition_theme <- aggregate_conversation_metric(
+        conversations,
+        "OSF Transition Theme",
+        "transition_theme"
+      )
 
       # combine metrics ----
       
@@ -192,7 +200,8 @@ get_conversation_metrics <- function(
         overall,
         by_attitude,
         by_product,
-        by_main_theme
+        by_main_theme,
+        by_transition_theme
       ) %>%
         pivot_longer(
           cols = c(total_count, transition_count, transition_percent),
@@ -230,7 +239,8 @@ get_conversation_metrics <- function(
             "overall",
             "attitude",
             "product",
-            "main_theme"
+            "main_theme",
+            "transition_theme"
           )
         ),
         attribute = if_else(
