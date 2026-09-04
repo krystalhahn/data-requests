@@ -176,7 +176,11 @@ get_beacon_metrics <- function(
   
   
   # helper function: extract page name
-  get_page_name <- function(x) {
+  get_page_name <- function(x, prefix = NULL) {
+    
+    if (!is.null(prefix)) {
+      x <- stringr::str_remove(x, paste0("^", prefix))
+    }
     
     stringr::str_extract(
       x,
@@ -234,7 +238,8 @@ get_beacon_metrics <- function(
       ),
       
       beacon_page_name = get_page_name(
-        beacon_opened
+        beacon_opened,
+        prefix = "Beacon opened on "
       ),
       
       beacon_page_link = get_page_link(
