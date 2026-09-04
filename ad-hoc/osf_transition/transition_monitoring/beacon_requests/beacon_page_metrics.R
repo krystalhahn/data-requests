@@ -14,6 +14,7 @@ get_beacon_metrics <- function(
   library(stringr)
   library(lubridate)
   library(rvest)
+  library(cld3)
   
   conversations_all <- fromJSON(
     conversations_data_path,
