@@ -505,10 +505,85 @@ beacon_metrics <- get_beacon_metrics(
 )
 
 # generate cumulative metrics ----
-beacon_metrics_0831 <- get_beacon_metrics(
+beacon_metrics <- get_beacon_metrics(
   conversations_data_path = "~/Desktop/helpscout_conversations_0825.json",
   cadence = "weekly",
   start = "2026-08-09",
   end = "2026-08-23",
   cumulative = TRUE
 )
+
+# write to sheet ----
+## set transition_sheet url
+
+existing_beacon_master <- read_sheet(transition_sheet_url, sheet = "Beacon pages")
+
+# find which rows are new
+new_rows <- beacon_metrics %>%
+  anti_join(existing_beacon_master, by = key_cols)
+# pages that haven't come up so far
+
+# find which rows are existing
+existing_rows <- beacon_metrics %>%
+  semi_join(existing_beacon_master, by = key_cols)
+
+current_week <- as.character(floor_date(Sys.Date(), "week", week_start = 7) - weeks(1))
+
+existing_cols <- names(existing_beacon_master)
+week_col_index <- which(sheet_cols == current_week)
+
+# get current week's column for existing rows
+# backfill NA values with 0
+existing_column <- existing_beacon_master %>%
+  left_join(existing_rows, by = key_cols) %>%
+  select(!!current_week) %>%
+  mutate(
+    across(
+      everything(),
+      ~ replace_na(.x, 0)
+    )
+  )
+
+# get current week's new rows
+# backfill NA values with 0
+new_rows_to_write <- existing_beacon_master[0, ] %>%
+  mutate(attribute_2 = as.character(attribute_2)) %>%
+  bind_rows(
+    new_rows %>%
+      mutate(attribute_2 = as.character(attribute_2))
+  ) %>%
+  mutate(
+    across(
+      -all_of(key_cols),
+      ~ tidyr::replace_na(.x, 0)
+    )
+  )
+
+# helper function to generate column letter
+col_to_letter <- function(n) {
+  paste0(LETTERS[(n - 1) %% 26 + 1])  # works for single letter columns
+}
+
+first_empty_col <- ncol(existing_beacon_master) + 1
+
+# write current week values to existing rows only
+# same order as the sheet (so previous steps are crucial)
+range_write(
+  transition_sheet_url,
+  existing_column,
+  sheet = "Beacon pages",
+  range = paste0(col_to_letter(first_empty_col), "1"), 
+  col_names = TRUE
+)
+
+# append new rows at the bottom
+if (nrow(new_rows) > 0) {
+  last_row <- nrow(existing_beacon_master) + 1
+  range_write(
+    transition_sheet_url,
+    new_rows_to_write,
+    sheet = "Beacon pages",
+    range = paste0("A", last_row + 1),
+    col_names = FALSE
+  )
+}
