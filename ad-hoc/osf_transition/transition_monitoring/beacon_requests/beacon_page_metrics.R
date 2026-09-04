@@ -432,7 +432,7 @@ get_beacon_metrics <- function(
       opened_pages <- aggregate_metric(
         conversations,
         "beacon_page_name_eng",
-        "page_beacon_opened"
+        "beacon_page_opened"
       )
       
       
@@ -440,7 +440,7 @@ get_beacon_metrics <- function(
       submitted_pages <- aggregate_metric(
         conversations,
         "beacon_last_page_name_eng",
-        "page_beacon_submitted"
+        "beacon_page_submitted"
       )
       
       
@@ -481,8 +481,8 @@ get_beacon_metrics <- function(
         metric = factor(
           metric,
           levels = c(
-            "page_beacon_opened",
-            "page_beacon_submitted"
+            "beacon_page_opened",
+            "beacon_page_submitted"
           )
         )
       ) %>%
