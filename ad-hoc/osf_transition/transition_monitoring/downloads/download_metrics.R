@@ -272,7 +272,7 @@ get_download_metrics <- function(
         downloads,
         id_var = "user_guid",
         bucket_var = "count",
-        metric_name = "user_bucket_count",
+        metric_name = "user_bucket_by_count",
         bucket_levels = c(
           "<10 downloads",
           "10+ downloads",
@@ -286,7 +286,7 @@ get_download_metrics <- function(
         downloads,
         id_var = "user_guid",
         bucket_var = "size",
-        metric_name = "user_bucket_size",
+        metric_name = "user_bucket_by_size",
         bucket_levels = c(
           "<5 GB",
           "5+ GB",
@@ -308,7 +308,7 @@ get_download_metrics <- function(
         project_downloads,
         id_var = "resource_guid",
         bucket_var = "count",
-        metric_name = "project_bucket_count",
+        metric_name = "project_bucket_by_count",
         bucket_levels = c(
           "<10 downloads",
           "10+ downloads",
@@ -322,7 +322,7 @@ get_download_metrics <- function(
         project_downloads,
         id_var = "resource_guid",
         bucket_var = "size",
-        metric_name = "project_bucket_size",
+        metric_name = "project_bucket_by_size",
         bucket_levels = c(
           "<5 GB",
           "5+ GB",
