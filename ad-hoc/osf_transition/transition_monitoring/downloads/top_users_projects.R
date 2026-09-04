@@ -34,9 +34,9 @@ top_users_by_gb <- downloads %>%
   arrange(desc(total_gb)) %>%
   head(10)
 
-# top 10 resources by download count ----
-## nodes, registrations, preprints
+# top 10 projects by download count ----
 top_projects_by_count <- downloads %>%
+  filter(resource_type == "osf.node") %>%
   group_by(resource_guid) %>%
   summarize(total = n(),
             total_gb = round(sum(size_bytes) / 1e9, 2)) %>%
@@ -45,8 +45,9 @@ top_projects_by_count <- downloads %>%
   arrange(desc(total)) %>%
   head(10)
 
-# top 10 resources by total download size (GB) ----
+# top 10 projects by total download size (GB) ----
 top_projects_by_gb <- downloads %>%
+  filter(resource_type == "osf.node") %>%
   group_by(resource_guid) %>%
   summarize(total = n(),
             total_gb = round(sum(size_bytes) / 1e9, 2)) %>%
