@@ -488,3 +488,21 @@ get_beacon_metrics <- function(
     return(weekly_metrics)
   }
 }
+
+# generate weekly metrics ----
+beacon_metrics <- get_beacon_metrics(
+  conversations_data_path = "~/Desktop/helpscout_conversations_0825.json",
+  cadence = "weekly",
+  start = "2026-08-09",
+  end = "2026-08-23",
+  cumulative = FALSE
+)
+
+# generate cumulative metrics ----
+beacon_metrics_0831 <- get_beacon_metrics(
+  conversations_data_path = "~/Desktop/helpscout_conversations_0825.json",
+  cadence = "weekly",
+  start = "2026-08-09",
+  end = "2026-08-23",
+  cumulative = TRUE
+)
