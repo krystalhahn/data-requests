@@ -411,6 +411,8 @@ download_metrics_cumulative <- get_download_metrics(
 
 existing_dl_master <- read_sheet(transition_sheet_url, sheet = "Downloads")
 
+key_cols <- c("metric", "attribute", "attribute_2", "measure")
+
 # find which rows are new
 new_rows <- download_metrics %>%
   anti_join(existing_dl_master, by = key_cols)
