@@ -409,7 +409,8 @@ download_metrics_cumulative <- get_download_metrics(
 # write to sheet ----
 ## set transition_sheet_url
 
-existing_dl_master <- read_sheet(transition_sheet_url, sheet = "Downloads")
+existing_dl_master <- read_sheet(transition_sheet_url, sheet = "Downloads")%>%
+  mutate(across(where(is.character), ~ na_if(.x, "NA")))
 
 key_cols <- c("metric", "attribute", "attribute_2", "measure")
 
