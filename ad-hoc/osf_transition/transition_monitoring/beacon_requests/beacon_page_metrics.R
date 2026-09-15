@@ -529,9 +529,6 @@ existing_rows <- beacon_metrics %>%
 
 current_week <- as.character(floor_date(Sys.Date(), "week", week_start = 7) - weeks(1))
 
-existing_cols <- names(existing_beacon_master)
-week_col_index <- which(sheet_cols == current_week)
-
 # get current week's column for existing rows
 # backfill NA values with 0
 existing_column <- existing_beacon_master %>%
