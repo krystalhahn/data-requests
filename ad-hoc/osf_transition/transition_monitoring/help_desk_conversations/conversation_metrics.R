@@ -278,7 +278,8 @@ conversation_metrics_cumulative <- get_conversation_metrics(
 
 # write to sheet ----
 ## set transition_sheet_url
-existing_conv_master <- read_sheet(transition_sheet_url, sheet = "Help desk conversations")
+existing_conv_master <- read_sheet(transition_sheet_url, sheet = "Help desk conversations") %>%
+  mutate(across(where(is.character), ~ na_if(.x, "NA")))
 
 new_rows <- conversation_metrics %>%
   anti_join(existing_conv_master, by = key_cols)
