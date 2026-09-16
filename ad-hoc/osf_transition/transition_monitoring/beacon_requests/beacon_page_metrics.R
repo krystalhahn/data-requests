@@ -322,7 +322,15 @@ get_beacon_metrics <- function(
     mutate(
       eng_page_name = page_name[lang == "en"][1]
     ) %>%
-    ungroup()
+    ungroup() %>%
+    mutate(
+      eng_page_name = dplyr::case_when(
+        is.na(eng_page_name) & page_name == "Edite seu rascunho de registro (Edit Your Draft Registration) - OSF Support" ~ "Edit Your Draft Registration - OSF Support",
+        is.na(eng_page_name) & page_name == "OSF'ye Başlarken (Getting started on the OSF, Turkish) - OSF Support" ~ "Getting started on the OSF - OSF Support",
+        page_name == "Entrar no OSF (Sign in to OSF) - OSF Support" ~ "Sign in to OSF - OSF Support", 
+        TRUE ~ eng_page_name
+      )
+    )
   
   
   # clean beacon page data
