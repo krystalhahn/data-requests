@@ -275,7 +275,8 @@ get_beacon_metrics <- function(
       ),
       
       beacon_last_page_name = get_page_name(
-        beacon_last_page
+        beacon_last_page,
+        prefix = "Viewed"
       ),
       
       beacon_last_page_link = get_page_link(
