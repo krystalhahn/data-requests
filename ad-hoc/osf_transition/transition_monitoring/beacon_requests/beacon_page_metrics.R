@@ -370,6 +370,11 @@ get_beacon_metrics <- function(
       ),
       beacon_last_page_name_eng = clean_search_page_name(
         beacon_last_page_name_eng
+      ),
+      beacon_last_page_name_eng = if_else(
+        is.na(beacon_last_page_name_eng),
+        beacon_page_name_eng,
+        beacon_last_page_name_eng
       )
     ) %>%
     select(
