@@ -200,9 +200,9 @@ get_beacon_metrics <- function(
   
   
   # helper function: standardize search page names
-  clean_search_page_name <- function(name) {
+  clean_search_page_name <- function(name, link) {
     dplyr::if_else(
-      stringr::str_detect(name, "Search results"),
+      link == "https://help.osf.io/search",
       "Search results...",
       name
     )
@@ -363,18 +363,20 @@ get_beacon_metrics <- function(
     ) %>%
     mutate(
       beacon_page_name_eng = clean_search_page_name(
-        beacon_page_name_eng
+        beacon_page_name_eng,
+        beacon_page_link
       ),
       beacon_current_page_name_eng = clean_search_page_name(
-        beacon_current_page_name_eng
+        beacon_current_page_name_eng,
+        beacon_current_page_link
       ),
       beacon_last_page_name_eng = clean_search_page_name(
-        beacon_last_page_name_eng
+        beacon_last_page_name_eng,
+        beacon_last_page_link
       ),
-      beacon_last_page_name_eng = if_else(
-        is.na(beacon_last_page_name_eng),
-        beacon_page_name_eng,
-        beacon_last_page_name_eng
+      beacon_last_page_name_eng = coalesce(
+        beacon_last_page_name_eng,
+        beacon_page_name_eng
       )
     ) %>%
     select(
