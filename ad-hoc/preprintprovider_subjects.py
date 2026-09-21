@@ -1,4 +1,4 @@
-def get_ppp_preprint_subjects(provider):
+def get_preprintprovider_subjects(provider):
     import csv
     import io
     from tqdm import tqdm
