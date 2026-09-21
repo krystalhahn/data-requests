@@ -9,6 +9,7 @@ def get_preprintprovider_guids(ppps):
     import pytz
     from dateutil.relativedelta import relativedelta
     from tqdm import tqdm
+    from django.db.models import Q
 
     filename = '/tmp/preprintprovider_guids.csv'
     COL_HEADERS = ['preprint_provider', 'guid']
@@ -18,22 +19,31 @@ def get_preprintprovider_guids(ppps):
 
     target_ppps = PreprintProvider.objects.filter(_id__in=ppps)
 
-    pbar = tqdm(total = target_ppps.count())
+    guid_filter = Q()
 
-    for ppp in target_ppps:
+    ct = ContentType.objects.get_for_model(Preprint)
 
-        for preprint in ppp.preprints.all():
+    object_ids = Preprint.objects.filter(
+        provider__in=target_ppps
+    ).values("pk")
 
-            writer.writerow({
-                'preprint_provider': ppp._id,
-                'guid': preprint._id
-            })
+    guid_filter |= Q(
+        content_type=ct,
+        object_id__in=object_ids
+    )
 
+    ppp_guids = Guid.objects.filter(guid_filter)
+
+    pbar = tqdm(total = ppp_guids.count())
+
+    for guid in ppp_guids:
+        writer.writerow({
+            'preprintprovider': guid.referent.provider._id,
+            'guid': guid._id
+        })
         pbar.update()
 
     pbar.close()
-
+    
     with open(filename, 'w') as writeFile:
         writeFile.write(output.getvalue())
-
-    print(f"Output written to {filename}")
