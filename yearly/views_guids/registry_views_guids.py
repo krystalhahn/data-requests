@@ -6,7 +6,7 @@ def get_registry_guids(registries):
     from tqdm import tqdm
     from django.db.models import Q
 
-    filename = '/tmp/registry_guids_from_ctguid.csv'
+    filename = '/tmp/registry_guids.csv'
     COL_HEADERS = ['registry', 'guid']
     output = io.StringIO()
     writer = csv.DictWriter(output, COL_HEADERS)
