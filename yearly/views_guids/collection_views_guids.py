@@ -5,8 +5,8 @@ def get_collection_guids(collections):
     import csv
     from tqdm import tqdm
 
-    filename = '/tmp/collection_guids_from_ctguid.csv'
-    col_headers = ['collection', 'guid']
+    filename = '/tmp/collection_guids.csv'
+    col_headers = ['collection', 'guid', 'title']
 
     output = io.StringIO()
     writer = csv.DictWriter(output, fieldnames=col_headers)
@@ -28,10 +28,13 @@ def get_collection_guids(collections):
             collection.guid_links.values_list('_id', flat=True)
         )
 
-        for guid_id in guid_ids:
+        for guid in Guid.objects.filter(_id__in=guid_ids):
+            referent = guid.referent
+
             rows.append({
                 'collection': collection.provider._id,
-                'guid': guid_id
+                'guid': guid._id,
+                'title': referent.title if referent else None
             })
 
     for row in tqdm(rows):
