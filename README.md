@@ -2,68 +2,78 @@
 
 Repo storing data extraction, manipulation, and analysis scripts supporting internal metrics and reporting, internal data requests, and external exploratory questions at COS
 
+------------------------------------------------------------------------
+
 ### Ad-hoc
 
 One-off/exploratory requests that may or may not lead to subsequent requests
 
 ##### Example subfolders:
 
--OSF Transition prep analytics and monitoring
+- OSF Transition prep analytics and monitoring
 
--OSF training and webinar analysis
+- OSF training and webinar analysis
 
--User activity by maturity (user journeys)
+- User activity by maturity (user journeys)
 
 ##### Example one-off request scripts:
 
--User creations by email domain for OSFI members
+- User creations by email domain for OSFI members
 
--Usage of GitHub addons
+- Usage of GitHub addons
 
--Tracking registrations in limbo state
+- Tracking registrations in limbo state
+
+------------------------------------------------------------------------
 
 ### Monthly
 
 Monthly metrics and any related exploratory analysis
 
--Lifecycle Open Science (LOS) metrics
+- Lifecycle Open Science (LOS) metrics
 
--NPS users
+- NPS users
 
--Funder metadata
+- Funder metadata
 
--CEDAR metadata
+- CEDAR metadata
 
--Content subjects/disciplines
+- Content subjects/disciplines
+
+------------------------------------------------------------------------
 
 ### Quarterly
 
 Quarterly reports detailing OSFI member insights
 
--All email domain metrics
+- All email domain metrics
 
--Active users
+- Active users
 
--Institutional metrics
+- Institutional metrics
 
--Institutional preprints by provider
+- Institutional preprints by provider
 
--Monthly and quarterly views
+- Monthly and quarterly views
 
--Regional storage usage
+- Regional storage usage
+
+------------------------------------------------------------------------
 
 ### Recurring
 
 Any other metrics/reports that are generated on a non-monthly/quarterly/yearly basis (e.g., biweekly, bimonthly, etc.)
 
--Preprint provider moderation metrics
+- Preprint provider moderation metrics
+
+------------------------------------------------------------------------
 
 ### Yearly
 
 Annual reports detailing member-specific metrics and views
 
--Collections
+- Collections
 
--Preprint providers
+- Preprint providers
 
--Registries
+- Registries
