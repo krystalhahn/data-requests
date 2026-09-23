@@ -276,7 +276,7 @@ def get_weekly_nodes_made_public(backup_cutoff, exclude_later_made_private):
 
     # specifically  "made_public" log is not followed by a "made_private" log
     if exclude_later_made_private:
-        filename = f'/tmp/weekly_nodes_made_public_from_logs.csv'
+        filename = f'/tmp/weekly_nodes_made_public.csv'
 
         actions = ["made_public", "made_private"]
 
