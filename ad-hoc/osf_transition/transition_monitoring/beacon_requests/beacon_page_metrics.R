@@ -122,6 +122,10 @@ get_beacon_metrics <- function(
   # helper function: extract a beacon field
   get_beacon_field <- function(html, field) {
     
+    if (is.null(html)) {
+      return(NA_character_)
+    }
+    
     cells <- html %>%
       rvest::html_elements("td") %>%
       rvest::html_text2()
@@ -138,6 +142,10 @@ get_beacon_metrics <- function(
   
   # helper function: extract Beacon History events
   get_history_events <- function(html) {
+    
+    if (is.null(html)) {
+      return(character(0))
+    }
     
     html %>%
       rvest::html_elements(
@@ -227,7 +235,11 @@ get_beacon_metrics <- function(
       # parse beacon HTML
       beacon_html = purrr::map(
         beacon_history,
-        rvest::read_html
+        ~ if (is.na(.x)) {
+          NULL
+        } else {
+          rvest::read_html(.x)
+        }
       ),
       
       # page where the beacon was opened
