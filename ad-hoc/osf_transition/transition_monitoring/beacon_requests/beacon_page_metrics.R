@@ -544,7 +544,8 @@ beacon_metrics <- get_beacon_metrics(
 # write to sheet ----
 ## set transition_sheet url
 
-existing_beacon_master <- read_sheet(transition_sheet_url, sheet = "Beacon pages")
+existing_beacon_master <- read_sheet(transition_sheet_url, sheet = "Beacon pages") %>%
+  mutate(across(where(is.character), ~ na_if(.x, "NA")))
 
 # find which rows are new
 new_rows <- beacon_metrics %>%
