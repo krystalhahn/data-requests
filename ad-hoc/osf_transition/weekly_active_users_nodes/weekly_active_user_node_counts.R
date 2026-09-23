@@ -178,3 +178,11 @@ summarize_weekly_node_activity <- function(nodes_created_from_field_path,
   cat(sprintf("%-45s %d\n", "all 'made_public' logs:", nrow(nodes_made_public_all)))
   cat(sprintf("%-45s %d\n", "no later 'made_private' log:", nrow(nodes_made_public)))
 }
+
+# example usage
+summarize_weekly_node_activity("~/Desktop/weekly_nodes_created_from_field_0919.csv",
+                               "~/Desktop/weekly_nodes_created_from_logs_0919.csv",
+                               "~/Desktop/weekly_nodes_deleted_from_field_0919.csv",
+                               "~/Desktop/weekly_nodes_deleted_from_logs_0919.csv",
+                               "~/Desktop/weekly_nodes_made_public_all_0919.csv",
+                               "~/Desktop/weekly_nodes_made_public_0919.csv")
