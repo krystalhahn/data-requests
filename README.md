@@ -11,17 +11,13 @@ One-off/exploratory requests that may or may not lead to subsequent requests
 ##### Example subfolders:
 
 - OSF Transition prep analytics and monitoring
-
 - OSF training and webinar analysis
-
 - User activity by maturity (user journeys)
 
 ##### Example one-off request scripts:
 
 - User creations by email domain for OSFI members
-
 - Usage of GitHub addons
-
 - Tracking registrations in limbo state
 
 ------------------------------------------------------------------------
@@ -31,13 +27,9 @@ One-off/exploratory requests that may or may not lead to subsequent requests
 Monthly metrics and any related exploratory analysis
 
 - Lifecycle Open Science (LOS) metrics
-
 - NPS users
-
 - Funder metadata
-
 - CEDAR metadata
-
 - Content subjects/disciplines
 
 ------------------------------------------------------------------------
@@ -47,15 +39,10 @@ Monthly metrics and any related exploratory analysis
 Quarterly reports detailing OSFI member insights
 
 - All email domain metrics
-
 - Active users
-
 - Institutional metrics
-
 - Institutional preprints by provider
-
 - Monthly and quarterly views
-
 - Regional storage usage
 
 ------------------------------------------------------------------------
@@ -73,7 +60,5 @@ Any other metrics/reports that are generated on a non-monthly/quarterly/yearly b
 Annual reports detailing member-specific metrics and views
 
 - Collections
-
 - Preprint providers
-
 - Registries
