@@ -37,7 +37,7 @@ def get_ppp_metrics(start_month, end_month, prov=None):
     while current < end:
         next_month = current + relativedelta(months=1)
 
-        month = current.strftime("%b").lower()
+        month = current.strftime("%Y-%m")
 
         for ppp in qs:
             if ppp.reviews_workflow == 'post-moderation':
