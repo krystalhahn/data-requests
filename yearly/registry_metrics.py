@@ -28,7 +28,7 @@ def get_monthly_registration_metrics(start_month, end_month):
     while current < end:
         next_month = current + relativedelta(months=1)
 
-        month = current.strftime("%b").lower()
+        month = current.strftime("%Y-%m")
 
         target_regs = Registration.objects.filter(provider__reviews_workflow='pre-moderation', created__gte=current, created__lt=next_month)
         valid_schemas = set(list(target_regs.values_list('registered_schema__name', flat=True)))
@@ -90,7 +90,7 @@ def get_monthly_registry_metrics(start_month, end_month, targets=None):
     while current < end:
         next_month = current + relativedelta(months=1)
 
-        month = current.strftime("%b").lower()
+        month = current.strftime("%Y-%m")
 
         for provider in target_providers:
             target_regs = Registration.objects.filter(provider=provider, created__gte=current, created__lt=next_month)
@@ -120,4 +120,3 @@ def get_monthly_registry_metrics(start_month, end_month, targets=None):
         writeFile.write(output.getvalue())
 
     print(f"CSV file saved to {filename}")
-
