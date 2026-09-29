@@ -59,69 +59,69 @@ def get_total_users_since_transition(backup_cutoff):
     print(f"Users with >5 private projects: {users_more_than_5_private_projects} (took {time.time() - t0:.2f}s)")
 
 def get_admin_users_since_transition(backup_cutoff):
-    import datetime
     import pytz
-    from django.utils import timezone
     import time
-    from django.db.models import Count, Q, Subquery, Value, CharField
-    from django.db.models.functions import Cast, Concat
-    from django.db.models import CharField
+    from django.utils import timezone
+    from tqdm import tqdm
 
     end_y, end_m, end_d = map(int, backup_cutoff.split("-"))
     end = timezone.datetime(end_y, end_m, end_d, tzinfo=pytz.utc)
     start = timezone.datetime(2026, 8, 9, tzinfo=pytz.utc)
 
     print("Counting admin users by project count...")
+
     t0 = time.time()
-    admin_users = OSFUser.objects.filter(
+
+    users = OSFUser.objects.filter(
         date_last_login__gte=start,
-        date_last_login__lt=end,
-        groups__name__startswith="node_",
-        groups__name__endswith="_admin"
-    ).annotate(
-        admin_project_count=Count(
-            "groups",
-            filter=Q(
-                groups__name__startswith="node_",
-                groups__name__endswith="_admin"
-            ),
-            distinct=True
-        )
+        date_last_login__lt=end
     )
 
-    users_any_admin_projects = admin_users.count()
-    users_more_than_5_admin_projects = admin_users.filter( admin_project_count__gt=5).count()
+    users_any_admin_projects = 0
+    users_more_than_5_admin_projects = 0
+    users_any_private_admin_projects = 0
+    users_more_than_5_private_admin_projects = 0
+
+    pbar = tqdm(total=users.count())
+
+    for user in users.iterator(chunk_size=1000):
+        nodes = Node.objects.filter(
+            _contributors=user,
+            type="osf.node"
+        ).only(
+            "id",
+            "is_public"
+        )
+
+        admin_project_count = 0
+        private_admin_project_count = 0
+
+        for node in nodes:
+            permissions = node.get_permissions(user)
+
+            if "admin" in permissions:
+                admin_project_count += 1
+
+                if not node.is_public:
+                    private_admin_project_count += 1
+
+        if admin_project_count > 0:
+            users_any_admin_projects += 1
+
+        if admin_project_count > 5:
+            users_more_than_5_admin_projects += 1
+
+        if private_admin_project_count > 0:
+            users_any_private_admin_projects += 1
+
+        if private_admin_project_count > 5:
+            users_more_than_5_private_admin_projects += 1
+
+        pbar.update(1)
+
+    pbar.close()
+
     print(f"Users with >0 admin projects: {users_any_admin_projects}")
-    print(f"Users with >5 admin projects: {users_more_than_5_admin_projects} (took {time.time() - t0:.2f}s)")
-
-    print("Counting admin users by private project count...")
-    t0 = time.time()
-    private_admin_group_names = Node.objects.filter(
-        type="osf.node",
-        is_public=False
-    ).annotate(
-        admin_group_name=Concat(
-            Value("node_"),
-            Cast("id", CharField()),
-            Value("_admin")
-        )
-    ).values("admin_group_name")
-
-    private_admin_users = OSFUser.objects.filter(
-        date_last_login__gte=start,
-        date_last_login__lt=end,
-        groups__name__in=Subquery(private_admin_group_names)
-    ).annotate(
-        private_admin_project_count=Count(
-            "groups",
-            filter=Q(
-                groups__name__in=Subquery(private_admin_group_names)
-            ),
-            distinct=True
-        )
-    )
-
-    users_any_private_admin_projects = private_admin_users.count()
-    users_more_than_5_private_admin_projects = private_admin_users.filter(private_admin_project_count__gt=5).count()
+    print(f"Users with >5 admin projects: {users_more_than_5_admin_projects}")
     print(f"Users with >0 private admin projects: {users_any_private_admin_projects}")
     print(f"Users with >5 private admin projects: {users_more_than_5_private_admin_projects} (took {time.time() - t0:.2f}s)")
