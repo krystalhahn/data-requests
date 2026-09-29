@@ -43,7 +43,8 @@ get_beacon_metrics <- function(
         }
       )
     ) %>%
-    select(-createdAt)
+    select(-createdAt) %>%
+    distinct()
   
   
   # unnest customFields
