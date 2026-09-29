@@ -37,7 +37,8 @@ get_conversation_metrics <- function(
         ~ if (length(.x) == 0) NA_character_
         else paste(.x, collapse = "; ")
       )
-    )
+    ) %>%
+    distinct()
   
   # unnest customFields
   custom_fields_wide <- conversations_all %>%
