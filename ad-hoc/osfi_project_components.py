@@ -1,4 +1,4 @@
-def get_osfi_project_components(osfi_id):
+def get_osfi_project_components(osfi_id, with_wiki_content=True):
     import io
     import csv
     from tqdm import tqdm
@@ -16,7 +16,23 @@ def get_osfi_project_components(osfi_id):
 
     for project in osfi_projects.all():
 
-        for component in project.descendants.all():
+        if with_wiki_content:
+
+            wiki_content = WikiVersion.objects.filter(
+                wiki_page__node=OuterRef('pk'),
+                content__isnull=False
+            )
+
+            components = project.descendants.annotate(
+                has_wiki_content=Exists(wiki_content)
+            ).filter(
+                has_wiki_content=True
+            )
+
+        else: 
+             components = project.descendants.all()
+
+        for component in components:
 
             admin_users = [
                 contributor
