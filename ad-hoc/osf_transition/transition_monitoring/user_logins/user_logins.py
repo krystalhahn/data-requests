@@ -55,6 +55,13 @@ def get_total_users_since_transition(backup_cutoff):
         )
     )
 
+    print(
+        f"% of total user base: {total_login_count} / "
+        f"{total_users.count()} = "
+        f"{total_login_count / total_users.count() * 100:.2f}%"
+        f" (took {time.time() - t0:.2f}s)"
+    )
+
     print(f"Total users with projects: {total_users.filter(total_project_count__gt=0).count()}")
     print(f"Total users with >5 projects: {total_users.filter(total_project_count__gt=5).count()}")
     print(f"Total users with private projects: {total_users.filter(private_project_count__gt=0).count()}")
