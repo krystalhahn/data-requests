@@ -97,6 +97,9 @@ get_beacon_metrics <- function(
       rename(
         attribute = all_of(page_var)
       ) %>%
+      mutate(
+        attribute = str_trim(attribute)
+      ) %>%
       pivot_longer(
         cols = c(
           total_count,
