@@ -20,7 +20,7 @@ def get_all_registrations_for_los(cutoff):
 
     cutoff_dt = datetime.datetime.fromisoformat(f"{cutoff}T00:00:00+00:00")
 
-    target_regs = Registration.objects.filter(created__lte=cutoff_dt)
+    target_regs = Registration.objects.filter(created__lt=cutoff_dt)
 
     pbar = tqdm(total=target_regs.count())
 
