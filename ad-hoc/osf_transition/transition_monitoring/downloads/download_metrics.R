@@ -442,6 +442,19 @@ existing_column <- existing_dl_master %>%
   left_join(existing_rows, by = key_cols) %>%
   select(!!current_week)
 
+new_rows_to_write <- existing_dl_master[0, ] %>%
+  mutate(attribute_2 = as.character(attribute_2)) %>%
+  bind_rows(
+    new_rows %>%
+      mutate(attribute_2 = as.character(attribute_2))
+  ) %>%
+  mutate(
+    across(
+      -all_of(key_cols),
+      ~ tidyr::replace_na(.x, 0)
+    )
+  )
+
 # helper function to generate column letter
 col_to_letter <- function(n) {
   paste0(LETTERS[(n - 1) %% 26 + 1])  # works for single letter columns
@@ -458,3 +471,15 @@ range_write(
   range = paste0(col_to_letter(first_empty_col), "1"), 
   col_names = TRUE
 )
+
+# append new rows at the bottom
+if (nrow(new_rows) > 0) {
+  last_row <- nrow(existing_dl_master) + 1
+  range_write(
+    transition_sheet_url,
+    new_rows_to_write,
+    sheet = "Downloads",
+    range = paste0("A", last_row + 1),
+    col_names = FALSE
+  )
+}
