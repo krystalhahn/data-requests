@@ -7,7 +7,7 @@ def get_registration_resources(cutoff):
     from tqdm import tqdm
     import json
     filename = '/tmp/registration_resources.csv'
-    COL_HEADERS = ['reg_guid', 'connected_output_types', 'connected_output_ids']
+    COL_HEADERS = ['reg_guid', 'connected_resources']
     output = io.StringIO()
     writer = csv.DictWriter(output, COL_HEADERS)
     writer.writeheader()
@@ -24,8 +24,7 @@ def get_registration_resources(cutoff):
         partifacts = sum([list(i.artifact_metadata.filter(artifact_type=ArtifactTypes.PRIMARY.value)) for i in idents], [])
         outcomes = [pa.outcome for pa in partifacts]
 
-        resource_types = []
-        resource_ids = []
+        resource_list = []
         ARTIFACT_TYPE_LABELS = dict(ArtifactTypes.choices())
         for o in outcomes:
             connected_artifacts = o.artifact_metadata.exclude(
@@ -37,18 +36,20 @@ def get_registration_resources(cutoff):
             )
             for artifact in connected_artifacts:
                 artifact_label = ARTIFACT_TYPE_LABELS.get(artifact.artifact_type,  str(artifact.artifact_type))
-                resource_types.append(artifact_label)
 
-                artifact_id = artifact.id
-                resource_ids.append(artifact_id)
+                resource_list.append({
+                    'id': artifact.id,
+                    'type': artifact_label,
+                })
 
         writer.writerow({
             'reg_guid': reg._id,
-            'connected_output_types': resource_types,
-            'connected_output_ids': resource_ids,
+            'connected_resources': resource_list
         })
         pbar.update()
 
     pbar.close()
     with open(filename, 'w') as writeFile:
         writeFile.write(output.getvalue())
+
+    print(f"Output written to {filename}")
