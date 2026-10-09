@@ -1,5 +1,5 @@
 # Total, not only for the quarter
-def get_domain_metrics(ds=None):
+def get_domain_metrics(ds=None, resume=False):
     import csv
     import os
     from django.utils import timezone
@@ -15,9 +15,9 @@ def get_domain_metrics(ds=None):
     # sort domains for predictable processing order
     ds = sorted(set(ds))
 
-    # load domains already completed so the script can resume
+    # load domains already completed only when resuming
     completed = set()
-    if os.path.exists(filename) and os.path.getsize(filename) > 0:
+    if resume and os.path.exists(filename) and os.path.getsize(filename) > 0:
         with open(filename, 'r', newline='') as read_file:
             reader = csv.DictReader(read_file)
             completed = {
@@ -27,19 +27,22 @@ def get_domain_metrics(ds=None):
 
     remaining = [d for d in ds if d not in completed]
 
+    print(f"Starting mode: {'Resume' if resume else 'Fresh run'}")
     print(f"Total domains: {len(ds)}")
     print(f"Already completed: {len(completed)}")
     print(f"Remaining: {len(remaining)}")
 
     target_date = timezone.now() - timezone.timedelta(days=365)
 
-    # append to existing file or create a new file with headers
+    # overwrite existing file for a fresh run; append when resuming
+    write_mode = 'a' if resume else 'w'
     write_header = (
-        not os.path.exists(filename)
+        not resume
+        or not os.path.exists(filename)
         or os.path.getsize(filename) == 0
     )
 
-    with open(filename, 'a', newline='') as write_file:
+    with open(filename, write_mode, newline='') as write_file:
         writer = csv.DictWriter(write_file, fieldnames=COL_HEADERS)
 
         if write_header:
