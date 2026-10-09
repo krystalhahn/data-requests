@@ -109,6 +109,7 @@ def get_added_resources(guid_list_path):
                         'creator_name': reg.creator.fullname,
                         'contributor_guid': '; '.join(reg.contributors.values_list('guids___id', flat=True)),
                         'contributor_name': '; '.join(reg.contributors.values_list('fullname', flat=True)),
+                        'resource_id': artifact._id,
                         'resource_title': o.title,
                         'resource_doi': artifact.identifier.value, 
                         'resource_type': artifact_label
