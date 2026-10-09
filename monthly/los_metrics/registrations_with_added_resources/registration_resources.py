@@ -44,7 +44,7 @@ def get_registration_resources(cutoff):
 
         writer.writerow({
             'reg_guid': reg._id,
-            'connected_resources': resource_list
+            'connected_resources': json.dumps(resource_list, default=str)
         })
         pbar.update()
 
