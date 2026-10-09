@@ -64,7 +64,7 @@ def get_added_resources(guid_list_path):
     filename = '/tmp/added_resource_regs.csv'
     COL_HEADERS = ['reg_guid', 'date_created', 'date_modified', 
                    'creator_guid', 'creator_name', 'contributor_guid', 'contributor_name', 
-                   'resource_title', 'resource_doi', 'resource_type']
+                   'resource_id', 'resource_title', 'resource_doi', 'resource_type']
 
     output = io.StringIO()
     writer = csv.DictWriter(output, COL_HEADERS)
@@ -109,7 +109,7 @@ def get_added_resources(guid_list_path):
                         'creator_name': reg.creator.fullname,
                         'contributor_guid': '; '.join(reg.contributors.values_list('guids___id', flat=True)),
                         'contributor_name': '; '.join(reg.contributors.values_list('fullname', flat=True)),
-                        'resource_title': artifact.title,
+                        'resource_title': o.title,
                         'resource_doi': artifact.identifier.value, 
                         'resource_type': artifact_label
                     })
