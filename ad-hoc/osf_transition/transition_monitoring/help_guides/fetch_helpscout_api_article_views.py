@@ -1,3 +1,5 @@
+# adjust current and previous week start and end dates
+
 import json
 import requests
 import os
