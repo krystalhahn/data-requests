@@ -40,6 +40,8 @@ def get_registration_resources(cutoff):
                 resource_list.append({
                     'id': artifact.id,
                     'type': artifact_label,
+                    'created': artifact.created,
+                    'finalized': artifact.finalized
                 })
 
         writer.writerow({
