@@ -1,3 +1,5 @@
+# automated to run at the top of each week (Sun 12am UTC - Sat 5pm PST)
+
 import json
 import requests
 import os
