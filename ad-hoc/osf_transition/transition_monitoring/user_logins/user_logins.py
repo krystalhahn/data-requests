@@ -1,3 +1,5 @@
+# set backup_cutoff to day AFTER last day of week captured
+
 def get_total_users_since_transition(backup_cutoff):
     import pytz
     from django.utils import timezone
