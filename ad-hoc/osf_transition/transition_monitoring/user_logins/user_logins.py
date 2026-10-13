@@ -65,8 +65,8 @@ def get_total_users_since_transition(backup_cutoff):
     )
 
     print(f"Total users with projects: {total_users.filter(total_project_count__gt=0).count()}")
-    print(f"Total users with >5 projects: {total_users.filter(total_project_count__gt=5).count()}")
     print(f"Total users with private projects: {total_users.filter(private_project_count__gt=0).count()}")
+    print(f"Total users with >5 projects: {total_users.filter(total_project_count__gt=5).count()}")
     print(f"Total users with >5 private projects: {total_users.filter(private_project_count__gt=5).count()} (took {time.time() - t0:.2f}s)")
 
     print("Calculating logged-in user percentages...")
@@ -106,14 +106,14 @@ def get_total_users_since_transition(backup_cutoff):
         f"{logged_in_any_projects / total_any_projects * 100:.2f}%"
     )
     print(
-        f">5 projects: {logged_in_more_than_5_projects} / "
-        f"{total_more_than_5_projects} = "
-        f"{logged_in_more_than_5_projects / total_more_than_5_projects * 100:.2f}%"
-    )
-    print(
         f">0 private projects: {logged_in_any_private_projects} / "
         f"{total_any_private_projects} = "
         f"{logged_in_any_private_projects / total_any_private_projects * 100:.2f}%"
+    )
+    print(
+        f">5 projects: {logged_in_more_than_5_projects} / "
+        f"{total_more_than_5_projects} = "
+        f"{logged_in_more_than_5_projects / total_more_than_5_projects * 100:.2f}%"
     )
     print(
         f">5 private projects: {logged_in_more_than_5_private_projects} / "
@@ -185,8 +185,8 @@ def get_admin_users_since_transition(backup_cutoff):
     pbar.close()
 
     print(f"Logged-in users with >0 admin projects: {users_any_admin_projects}")
-    print(f"Logged-in users with >5 admin projects: {users_more_than_5_admin_projects}")
     print(f"Logged-in users with >0 private admin projects: {users_any_private_admin_projects}")
+    print(f"Logged-in users with >5 admin projects: {users_more_than_5_admin_projects}")
     print(f"Logged-in users with >5 private admin projects: {users_more_than_5_private_admin_projects}")
     print(f"(took {time.time() - t0:.2f}s)")
 
@@ -242,8 +242,8 @@ def get_admin_users_since_transition(backup_cutoff):
     pbar.close()
 
     print(f"Total users with >0 admin projects: {total_any_admin_projects}")
-    print(f"Total users with >5 admin projects: {total_more_than_5_admin_projects}")
     print(f"Total users with >0 private admin projects: {total_any_private_admin_projects}")
+    print(f"Total users with >5 admin projects: {total_more_than_5_admin_projects}")
     print(f"Total users with >5 private admin projects: {total_more_than_5_private_admin_projects}")
     print(f"(took {time.time() - t0:.2f}s)")
 
@@ -257,15 +257,15 @@ def get_admin_users_since_transition(backup_cutoff):
     )
 
     print(
-        f">5 admin projects: {users_more_than_5_admin_projects} / "
-        f"{total_more_than_5_admin_projects} = "
-        f"{users_more_than_5_admin_projects / total_more_than_5_admin_projects * 100:.2f}%"
-    )
-
-    print(
         f">0 private admin projects: {users_any_private_admin_projects} / "
         f"{total_any_private_admin_projects} = "
         f"{users_any_private_admin_projects / total_any_private_admin_projects * 100:.2f}%"
+    )
+
+    print(
+        f">5 admin projects: {users_more_than_5_admin_projects} / "
+        f"{total_more_than_5_admin_projects} = "
+        f"{users_more_than_5_admin_projects / total_more_than_5_admin_projects * 100:.2f}%"
     )
 
     print(
