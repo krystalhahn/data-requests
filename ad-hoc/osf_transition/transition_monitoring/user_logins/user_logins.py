@@ -64,10 +64,10 @@ def get_total_users_since_transition(backup_cutoff):
         f" (took {time.time() - t0:.2f}s)"
     )
 
-    print(f"Total users with projects: {total_users.filter(total_project_count__gt=0).count()}")
-    print(f"Total users with private projects: {total_users.filter(private_project_count__gt=0).count()}")
-    print(f"Total users with >5 projects: {total_users.filter(total_project_count__gt=5).count()}")
-    print(f"Total users with >5 private projects: {total_users.filter(private_project_count__gt=5).count()} (took {time.time() - t0:.2f}s)")
+    # print(f"Total users with projects: {total_users.filter(total_project_count__gt=0).count()}")
+    # print(f"Total users with private projects: {total_users.filter(private_project_count__gt=0).count()}")
+    # print(f"Total users with >5 projects: {total_users.filter(total_project_count__gt=5).count()}")
+    # print(f"Total users with >5 private projects: {total_users.filter(private_project_count__gt=5).count()} (took {time.time() - t0:.2f}s)")
 
     print("Calculating logged-in user percentages...")
     t0 = time.time()
@@ -184,11 +184,11 @@ def get_admin_users_since_transition(backup_cutoff):
 
     pbar.close()
 
-    print(f"Logged-in users with >0 admin projects: {users_any_admin_projects}")
-    print(f"Logged-in users with >0 private admin projects: {users_any_private_admin_projects}")
-    print(f"Logged-in users with >5 admin projects: {users_more_than_5_admin_projects}")
-    print(f"Logged-in users with >5 private admin projects: {users_more_than_5_private_admin_projects}")
-    print(f"(took {time.time() - t0:.2f}s)")
+    # print(f"Logged-in users with >0 admin projects: {users_any_admin_projects}")
+    # print(f"Logged-in users with >0 private admin projects: {users_any_private_admin_projects}")
+    # print(f"Logged-in users with >5 admin projects: {users_more_than_5_admin_projects}")
+    # print(f"Logged-in users with >5 private admin projects: {users_more_than_5_private_admin_projects}")
+    # print(f"(took {time.time() - t0:.2f}s)")
 
     print("Counting total users by admin project count...")
     t0 = time.time()
@@ -241,11 +241,11 @@ def get_admin_users_since_transition(backup_cutoff):
 
     pbar.close()
 
-    print(f"Total users with >0 admin projects: {total_any_admin_projects}")
-    print(f"Total users with >0 private admin projects: {total_any_private_admin_projects}")
-    print(f"Total users with >5 admin projects: {total_more_than_5_admin_projects}")
-    print(f"Total users with >5 private admin projects: {total_more_than_5_private_admin_projects}")
-    print(f"(took {time.time() - t0:.2f}s)")
+    # print(f"Total users with >0 admin projects: {total_any_admin_projects}")
+    # print(f"Total users with >0 private admin projects: {total_any_private_admin_projects}")
+    # print(f"Total users with >5 admin projects: {total_more_than_5_admin_projects}")
+    # print(f"Total users with >5 private admin projects: {total_more_than_5_private_admin_projects}")
+    # print(f"(took {time.time() - t0:.2f}s)")
 
     print("Calculating logged-in user percentages...")
     t0 = time.time()
