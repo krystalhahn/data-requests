@@ -31,6 +31,11 @@ def get_unpublished_reg_users():
 
     for user in target_users.iterator(chunk_size=1000):
 
+        subjects = DraftRegistration.objects.filter(
+                    initiator=user,
+                ).values_list('subjects__text', flat=True).distinct()
+        
+
         jobs = user.jobs or []
 
         def to_int(value):
@@ -53,7 +58,7 @@ def get_unpublished_reg_users():
             'first_name': user.given_name,
             'last_name': user.family_name,
             'email_address': user.username,
-            'discipline': None,
+            'discipline': '; '.join(subjects),
             'institution': None,
             'last_title': latest_job.get('title'),  
             'titles': json.dumps([job.get("title") for job in user.jobs], indent=2), 
