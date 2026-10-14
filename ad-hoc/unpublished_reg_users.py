@@ -10,6 +10,7 @@ def get_unpublished_reg_users():
     writer = csv.DictWriter(output, COL_HEADERS)
     writer.writeheader()
 
+    # find users with draft registrations but no published registrations
     target_users = OSFUser.objects.annotate(
         has_published_reg=Exists(
             Registration.objects.filter(
@@ -38,6 +39,7 @@ def get_unpublished_reg_users():
 
     for user in target_users.iterator(chunk_size=1000):
 
+        # get distinct disciplines from the user's draft registrations
         subjects = DraftRegistration.objects.filter(
                     initiator=user,
                 ).values_list('subjects__text', flat=True).distinct()
@@ -51,6 +53,7 @@ def get_unpublished_reg_users():
             if affiliation.institution
         })
 
+        # get the user's job titles from user profile
         jobs = user.jobs or []
 
         def to_int(value):
@@ -59,6 +62,7 @@ def get_unpublished_reg_users():
             except (ValueError, TypeError):
                 return 0
 
+        # identify the user's most recent job title based on start date
         latest_job = max(
             jobs,
             key=lambda job: (
