@@ -180,9 +180,9 @@ summarize_weekly_node_activity <- function(nodes_created_from_field_path,
 }
 
 # example usage
-summarize_weekly_node_activity("~/Desktop/weekly_nodes_created_from_field_0919.csv",
-                               "~/Desktop/weekly_nodes_created_from_logs_0919.csv",
-                               "~/Desktop/weekly_nodes_deleted_from_field_0919.csv",
-                               "~/Desktop/weekly_nodes_deleted_from_logs_0919.csv",
-                               "~/Desktop/weekly_nodes_made_public_all_0919.csv",
-                               "~/Desktop/weekly_nodes_made_public_0919.csv")
+summarize_weekly_node_activity("~/Desktop/weekly_nodes_created_from_field_1010.csv",
+                               "~/Desktop/weekly_nodes_created_from_logs_1010.csv",
+                               "~/Desktop/weekly_nodes_deleted_from_field_1010.csv",
+                               "~/Desktop/weekly_nodes_deleted_from_logs_1010.csv",
+                               "~/Desktop/weekly_nodes_made_public_all_1010.csv",
+                               "~/Desktop/weekly_nodes_made_public_1010.csv")
