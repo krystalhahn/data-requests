@@ -29,12 +29,27 @@ def get_unpublished_reg_users():
 
     pbar = tqdm(total=target_users.count())
 
+    # get the reverse accessor for institution affiliations.
+    affiliation_field = next(
+        f for f in OSFUser._meta.get_fields()
+        if f.name == 'institutionaffiliation'
+    )
+    affiliation_accessor = affiliation_field.get_accessor_name()
+
     for user in target_users.iterator(chunk_size=1000):
 
         subjects = DraftRegistration.objects.filter(
                     initiator=user,
                 ).values_list('subjects__text', flat=True).distinct()
-        
+
+        affiliations = getattr(user, affiliation_accessor).select_related(
+            'institution'
+        )
+        institution_names = sorted({
+            affiliation.institution.name
+            for affiliation in affiliations
+            if affiliation.institution
+        })
 
         jobs = user.jobs or []
 
@@ -59,7 +74,7 @@ def get_unpublished_reg_users():
             'last_name': user.family_name,
             'email_address': user.username,
             'discipline': '; '.join(subject for subject in subjects if subject),
-            'institution': None,
+            'institution': '; '.join(institution_names),
             'last_title': latest_job.get('title'),  
             'titles': json.dumps([job.get("title") for job in user.jobs], indent=2), 
         })
