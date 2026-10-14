@@ -31,14 +31,25 @@ def get_unpublished_reg_users():
 
     for user in target_users.iterator(chunk_size=1000):
 
+        jobs = user.jobs or []
+
+        latest_job = max(
+            jobs,
+            key=lambda job: (
+                int(job.get("startYear") or 0),
+                int(job.get("startMonth") or 0),
+            ),
+            default={},
+        )
+
         writer.writerow({
             'guid': user._id,
             'first_name': user.given_name,
             'last_name': user.family_name,
             'email_address': user.username,
-            'discipline': 
-            'institution': 
-            'last_title': max(user.jobs, key=lambda job: (job.get("startYear", 0), job.get("startMonth", 0))).get("title"), 
+            'discipline': None,
+            'institution': None,
+            'last_title': latest_job.get('title'),  
             'titles': json.dumps([job.get("title") for job in user.jobs], indent=2), 
         })
         pbar.update()
