@@ -5,7 +5,7 @@ def get_unpublished_reg_users():
     import json
 
     filename = '/tmp/unpublished_reg_users.csv'
-    COL_HEADERS = ['guid', 'first_name', 'last_name', 'email_address', 'discipline', 'institution', 'last_title', 'titles']
+    COL_HEADERS = ['guid', 'first_name', 'last_name', 'email_address', 'discipline', 'institution', 'last_role', 'roles']
     output = io.StringIO()
     writer = csv.DictWriter(output, COL_HEADERS)
     writer.writeheader()
@@ -75,8 +75,8 @@ def get_unpublished_reg_users():
             'email_address': user.username,
             'discipline': '; '.join(subject for subject in subjects if subject),
             'institution': '; '.join(institution_names),
-            'last_title': latest_job.get('title'),  
-            'titles': '; '.join(job.get("title") for job in jobs if job.get("title")),
+            'last_role': latest_job.get('title'),  
+            'roles': '; '.join(job.get("title") for job in jobs if job.get("title")),
         })
         pbar.update()
 
