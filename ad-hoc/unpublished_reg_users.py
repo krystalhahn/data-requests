@@ -76,7 +76,7 @@ def get_unpublished_reg_users():
             'discipline': '; '.join(subject for subject in subjects if subject),
             'institution': '; '.join(institution_names),
             'last_title': latest_job.get('title'),  
-            'titles': json.dumps([job.get("title") for job in user.jobs], indent=2), 
+            'titles': '; '.join(job.get("title") for job in jobs if job.get("title")),
         })
         pbar.update()
 
