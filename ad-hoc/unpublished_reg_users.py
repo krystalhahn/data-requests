@@ -58,7 +58,7 @@ def get_unpublished_reg_users():
             'first_name': user.given_name,
             'last_name': user.family_name,
             'email_address': user.username,
-            'discipline': '; '.join(subjects),
+            'discipline': '; '.join(subject for subject in subjects if subject),
             'institution': None,
             'last_title': latest_job.get('title'),  
             'titles': json.dumps([job.get("title") for job in user.jobs], indent=2), 
