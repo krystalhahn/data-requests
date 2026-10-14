@@ -33,11 +33,17 @@ def get_unpublished_reg_users():
 
         jobs = user.jobs or []
 
+        def to_int(value):
+            try:
+                return int(value or 0)
+            except (ValueError, TypeError):
+                return 0
+
         latest_job = max(
             jobs,
             key=lambda job: (
-                int(job.get("startYear") or 0),
-                int(job.get("startMonth") or 0),
+                to_int(job.get("startYear")),
+                to_int(job.get("startMonth")),
             ),
             default={},
         )
