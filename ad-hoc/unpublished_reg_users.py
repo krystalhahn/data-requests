@@ -1,4 +1,4 @@
-def get_unpublished_reg_users(reg_user_field, draft_user_field):
+def get_unpublished_reg_users(reg_user_field, draft_user_field, filtered=True):
     import csv
     import io
     from tqdm import tqdm
@@ -11,16 +11,27 @@ def get_unpublished_reg_users(reg_user_field, draft_user_field):
     writer.writeheader()
 
     # find users with draft registrations but no published registrations
+    reg_filters = {'registered_date__isnull': False}
+
+    # filter for public, non-deleted, accepted registrations if specified
+    if filtered:
+        reg_filters.update({
+            'is_public': True,
+            'deleted__isnull': True,
+            'moderation_state': 'accepted',
+        })
+
+    reg_query = Registration.objects.filter(
+        **{reg_user_field: OuterRef("pk")},
+        **reg_filters
+    )
+
+    # exclude spam registrations if specified
+    if filtered:
+        reg_query = reg_query.exclude(spam_status=2)
+
     target_users = OSFUser.objects.annotate(
-        has_published_reg=Exists(
-            Registration.objects.filter(
-                **{reg_user_field: OuterRef("pk")},
-                is_public=True,
-                deleted__isnull=True,
-                registered_date__isnull=False,
-                moderation_state="accepted"
-            ).exclude(spam_status=2)
-        ),
+        has_published_reg=Exists(reg_query),
         has_draft_reg=Exists(
             DraftRegistration.objects.filter(
                 **{draft_user_field: OuterRef("pk")}
