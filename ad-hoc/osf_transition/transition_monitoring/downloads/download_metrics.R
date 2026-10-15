@@ -238,7 +238,8 @@ get_download_metrics <- function(
           resource_type = case_when(
             resource_type == "osf.node" ~ "node",
             resource_type == "osf.registration" ~ "registration",
-            resource_type == "osf.preprint" ~ "preprint"
+            resource_type == "osf.preprint" ~ "preprint",
+            resource_type == "osf.draftnode" ~ "draftnode"
           )
         ) %>%
         aggregate_download_metric(
