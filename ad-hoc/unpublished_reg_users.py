@@ -15,7 +15,7 @@ def get_unpublished_reg_users():
         has_published_reg=Exists(
             Registration.objects.filter(
                 registered_user=OuterRef("pk"),
-                date_registered__isnull=False
+                registered_date__isnull=False
             )
         ),
         has_draft_reg=Exists(
