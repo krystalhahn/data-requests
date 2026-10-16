@@ -438,10 +438,17 @@ order_check <- existing_rows %>%
 # flag any mismatches
 mismatches <- order_check %>% filter(row_num != sheet_row)
 print(paste("Mismatched rows:", nrow(mismatches)))
+# mismatches will indicate that rows existing in the master are missing in the weekly metrics 
 
 existing_column <- existing_dl_master %>%
   left_join(existing_rows, by = key_cols) %>%
-  select(!!current_week)
+  select(!!current_week) %>%
+  mutate(
+    across(
+      everything(), ~ 
+        replace_na(.x, 0)
+    )
+  )
 
 new_rows_to_write <- existing_dl_master[0, ] %>%
   mutate(attribute_2 = as.character(attribute_2)) %>%
