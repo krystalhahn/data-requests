@@ -7,11 +7,12 @@ import collections.abc as _abc
 import csv
 import dataclasses
 import itertools
+import os
 
 import requests
 
 
-_OSF_COOKIE = "..."  # add your cookie
+_OSF_TOKEN = os.environ["OSF_TOKEN"]
 # _SEARCH_URL = 'https://api.staging.osf.io/_/metrics/raw-osfmetrics_es8/*itemusagereport*/_search'
 _SEARCH_URL = "https://api.osf.io/_/metrics/raw-osfmetrics_es8/*itemusagereport*/_search"
 _SORT = ('item_iri', 'cycle_coverage')
@@ -39,11 +40,13 @@ def _get_argparser():
 
 
 def _do_search(json_body: dict):
+    # print(json_body)
+    
     _resp = requests.post(
         _SEARCH_URL,
         headers={
-            "Cookie": _OSF_COOKIE,
-            'Accept': "application/json",
+            "Authorization": f"Bearer {_OSF_TOKEN}",
+            "Accept": "application/json",
         },
         json=json_body,
     )
@@ -77,16 +80,25 @@ def _each_doc(base_query: dict, search_after):
     }
     if search_after:
         _search_body['search_after'] = search_after
-    while ...:
+
+    _total = 0
+
+    while True:
         _resp = _do_search(_search_body)
         _hits = _resp['hits']['hits']
+
         if _hits:
             for _hit in _hits:
                 yield _hit['_source']
+                _total += 1
+
+                if _total % 100000 == 0:
+                    print(f'Processed {_total} documents...')
+
             _search_after = _hits[-1]['sort']
             _search_body['search_after'] = _search_after
-            print(f'got {len(_hits)} thru {_search_after!r}...')
         else:
+            print(f'Finished. Total documents: {_total}')
             return
 
 

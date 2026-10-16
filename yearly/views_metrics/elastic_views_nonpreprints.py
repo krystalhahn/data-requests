@@ -7,11 +7,12 @@ import collections.abc as _abc
 import csv
 import dataclasses
 import itertools
+import os
 
 import requests
 
 
-_OSF_COOKIE = "..."  # add your cookie
+_OSF_TOKEN = os.environ["OSF_TOKEN"]
 # _SEARCH_URL = 'https://api.staging.osf.io/_/metrics/raw-osfmetrics_es8/*itemusagereport*/_search'
 _SEARCH_URL = "https://api.osf.io/_/metrics/raw-osfmetrics_es8/*itemusagereport*/_search"
 _SORT = ('item_iri', 'cycle_coverage')
@@ -39,11 +40,13 @@ def _get_argparser():
 
 
 def _do_search(json_body: dict):
+    # print(json_body)
+    
     _resp = requests.post(
         _SEARCH_URL,
         headers={
-            "Cookie": _OSF_COOKIE,
-            'Accept': "application/json",
+            "Authorization": f"Bearer {_OSF_TOKEN}",
+            "Accept": "application/json",
         },
         json=json_body,
     )
