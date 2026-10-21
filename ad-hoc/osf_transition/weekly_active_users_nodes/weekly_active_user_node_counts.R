@@ -120,6 +120,11 @@ summarize_weekly_node_activity <- function(nodes_created_from_field_path,
   # nodes created
   nodes_created_field <- read_csv(
     nodes_created_from_field_path,
+    col_types = cols(
+      date_node_created_log = col_datetime(),
+      date_project_created_log = col_datetime(),
+      date_created_from_log = col_datetime()
+    ),
     show_col_types = FALSE
   )
   
