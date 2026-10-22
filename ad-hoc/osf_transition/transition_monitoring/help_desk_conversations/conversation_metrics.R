@@ -38,7 +38,7 @@ get_conversation_metrics <- function(
         else paste(.x, collapse = "; ")
       )
     ) %>%
-    distinct()
+    distinct(id, createdAt, .keep_all = TRUE)
   
   # unnest customFields
   custom_fields_wide <- conversations_all %>%
