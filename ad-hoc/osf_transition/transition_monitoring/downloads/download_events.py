@@ -1,4 +1,4 @@
-def get_download_events():
+def get_download_events(start_date):
     import csv
     from tqdm import tqdm
     from django.db import connection
@@ -11,11 +11,13 @@ def get_download_events():
 
     with connection.cursor() as cursor:
 
-        # get total number of download events for pbar
+        # get total number of download events from start_date onward for pbar
         cursor.execute("""
             SELECT COUNT(*)
-            FROM osf_downloadevent;
-        """)
+            FROM osf_downloadevent
+            WHERE created >= %s;
+        """, [start_date])
+
         total = cursor.fetchone()[0]
 
         # get all download events and corresponding user/resource information
@@ -43,10 +45,13 @@ def get_download_events():
             LEFT JOIN osf_abstractnode an
                 ON rg.object_id = an.id
 
+            WHERE de.created >= %s
+
             ORDER BY de.id;
         """, [
             user_content_type_id,
             abstractnode_content_type_id,
+            start_date,
         ])
 
         # get column names
