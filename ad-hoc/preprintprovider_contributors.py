@@ -3,44 +3,49 @@
 ## email address
 ## permission level
 
-def get_ppp_contributors(provider, n=None):
+def get_ppp_contributors(provider, n=None, batch_size=500):
     import csv
-    import io
     from tqdm import tqdm
 
     filename = f'/tmp/{provider._id}_preprint_contributors.csv'
-    COL_HEADERS = ['preprint_guid_ver', 'preprint_guid', 'preprint_version', 'user_guid', 'email_address', 'permissions']
-    output = io.StringIO()
-    writer = csv.DictWriter(output, COL_HEADERS)
-    writer.writeheader()
 
-    preprints = Preprint.objects.filter(provider=provider, is_public=True).distinct()
+    COL_HEADERS = [
+        'preprint_guid_ver',
+        'preprint_guid',
+        'preprint_version',
+        'user_guid',
+        'email_address',
+        'permissions'
+    ]
 
-    if n:
+    preprints = Preprint.objects.filter(
+        provider=provider,
+        is_public=True
+    ).distinct().prefetch_related('contributors')
+
+    if n is not None:
         preprints = preprints[:n]
 
-    pbar = tqdm(total=preprints.count())
+    total = preprints.count()
 
-    for p in preprints:
+    with open(filename, 'w', newline='') as f:
+        writer = csv.DictWriter(f, fieldnames=COL_HEADERS)
+        writer.writeheader()
 
-        preprint_guid = p._id.split('_')[0]
-        preprint_version = p._id.split('_')[1]
+        for p in tqdm(
+            preprints.iterator(chunk_size=batch_size),
+            total=total
+        ):
+            preprint_guid, preprint_version = p._id.split('_', 1)
 
-        for c in p.contributors.all():
-
-            writer.writerow({
-                'preprint_guid_ver': p._id, 
-                'preprint_guid': preprint_guid,
-                'preprint_version': preprint_version,
-                'user_guid': c._id,
-                'email_address': c.username,
-                'permissions': list(p.get_permissions(c))
-            })
-
-        pbar.update()
-
-    pbar.close()
-    with open(filename, 'w') as writeFile:
-        writeFile.write(output.getvalue())
+            for c in p.contributors.all():
+                writer.writerow({
+                    'preprint_guid_ver': p._id,
+                    'preprint_guid': preprint_guid,
+                    'preprint_version': preprint_version,
+                    'user_guid': c._id,
+                    'email_address': c.username,
+                    'permissions': list(p.get_permissions(c))
+                })
 
     print(f'Output written to {filename}')
