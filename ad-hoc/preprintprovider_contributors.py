@@ -1,7 +1,5 @@
-# all contributors to public PsyArXiv preprints
-## GUID
-## email address
-## permission level
+# example argument
+provider = PreprintProvider.objects.get(name = 'PsyArXiv')
 
 def get_ppp_contributors(provider, n=None, batch_size=500):
     import csv
