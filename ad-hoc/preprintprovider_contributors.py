@@ -21,7 +21,7 @@ def get_ppp_contributors(provider, n=None, batch_size=500):
     preprints = Preprint.objects.filter(
         provider=provider,
         is_public=True
-    ).distinct().prefetch_related('contributors')
+    ).distinct().prefetch_related('_contributors')
 
     if n is not None:
         preprints = preprints[:n]
@@ -38,7 +38,7 @@ def get_ppp_contributors(provider, n=None, batch_size=500):
         ):
             preprint_guid, preprint_version = p._id.split('_', 1)
 
-            for c in p.contributors.all():
+            for c in p._contributors.all():
                 writer.writerow({
                     'preprint_guid_ver': p._id,
                     'preprint_guid': preprint_guid,
