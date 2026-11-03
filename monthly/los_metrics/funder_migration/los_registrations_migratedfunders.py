@@ -9,7 +9,7 @@ def get_all_registrations_for_los(cutoff, mapping_path):
     import datetime
     from osf.utils.outcomes import ArtifactTypes
     from osf.models import Identifier, OutcomeArtifact
-    from tqdm import tqdm
+    from tqdm.auto import tqdm
     import json
 
     funder_map = {}
