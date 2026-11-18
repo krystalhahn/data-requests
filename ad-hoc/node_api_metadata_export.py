@@ -10,6 +10,8 @@ def export_nodes(
     from osf.models import Node
     from tqdm import tqdm
 
+    api_base = 'https://api.osf.io/v2'
+
     qs = Node.objects.filter(
         is_public=True,
         deleted__isnull=True
@@ -65,6 +67,128 @@ def export_nodes(
                             [{'id': subject._id, 'text': subject.text}]
                             for subject in node.subjects.all()
                         ],
+                    },
+                    'relationships': {
+                        'children': {
+                            'links': {
+                                'related': {
+                                    'href': f'{api_base}/nodes/{nid}/children/',
+                                    'meta': {}
+                                }
+                            }
+                        },
+                        'comments': {
+                            'links': {
+                                'related': {
+                                    'href': f'{api_base}/nodes/{nid}/comments/?filter%5Btarget%5D={nid}',
+                                    'meta': {}
+                                }
+                            }
+                        },
+                        'contributors': {
+                            'links': {
+                                'related': {
+                                    'href': f'{api_base}/nodes/{nid}/contributors/',
+                                    'meta': {}
+                                }
+                            }
+                        },
+                        'bibliographic_contributors': {
+                            'links': {
+                                'related': {
+                                    'href': f'{api_base}/nodes/{nid}/bibliographic_contributors/',
+                                    'meta': {}
+                                }
+                            }
+                        },
+                        'files': {
+                            'links': {
+                                'related': {
+                                    'href': f'{api_base}/nodes/{nid}/files/',
+                                    'meta': {}
+                                }
+                            }
+                        },
+                        'settings': {
+                            'links': {
+                                'related': {
+                                    'href': f'{api_base}/nodes/{nid}/settings/',
+                                    'meta': {}
+                                }
+                            },
+                            'data': {
+                                'id': nid,
+                                'type': 'node-setting'
+                            }
+                        },
+                        'registrations': {
+                            'links': {
+                                'related': {
+                                    'href': f'{api_base}/nodes/{nid}/registrations/',
+                                    'meta': {}
+                                }
+                            }
+                        },
+                        'identifiers': {
+                            'links': {
+                                'related': {
+                                    'href': f'{api_base}/nodes/{nid}/identifiers/',
+                                    'meta': {}
+                                }
+                            }
+                        },
+                        'affiliated_institutions': {
+                            'links': {
+                                'related': {
+                                    'href': f'{api_base}/nodes/{nid}/institutions/',
+                                    'meta': {}
+                                }
+                            }
+                        },
+                        'region': {
+                            'links': {
+                                'related': {
+                                    'href': f'{api_base}/nodes/{nid}/region/',
+                                    'meta': {}
+                                }
+                            }
+                        },
+                        'root': {
+                            'links': {
+                                'related': {
+                                    'href': f'{api_base}/nodes/{node.root._id}/',
+                                    'meta': {}
+                                }
+                            },
+                            'data': {
+                                'id': node.root._id,
+                                'type': 'nodes'
+                            }
+                        },
+                        'citation': {
+                            'links': {
+                                'related': {
+                                    'href': f'{api_base}/nodes/{nid}/citation/',
+                                    'meta': {}
+                                }
+                            },
+                            'data': {
+                                'id': nid,
+                                'type': 'citation'
+                            }
+                        },
+                        'storage': {
+                            'links': {
+                                'related': {
+                                    'href': f'{api_base}/nodes/{nid}/storage/',
+                                    'meta': {}
+                                }
+                            },
+                            'data': {
+                                'id': nid,
+                                'type': 'node-storage'
+                            }
+                        },
                     },
                 }
 
