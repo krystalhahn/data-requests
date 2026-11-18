@@ -47,8 +47,14 @@ def export_nodes(
                         'description': node.description,
                         'category': node.category,
                         'custom_citation': getattr(node, 'custom_citation', None),
-                        'date_created': node.created,
-                        'date_modified': node.last_logged,
+                        'date_created': (
+                            node.created.isoformat().replace('+00:00', '')
+                            if node.created else None
+                        ),
+                        'date_modified': (
+                            node.last_logged.isoformat().replace('+00:00', '')
+                            if node.last_logged else None
+                        ),
                         'registration': node.is_registration,
                         'preprint': False,
                         'fork': node.is_fork,
