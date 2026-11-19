@@ -180,3 +180,60 @@ def write_nps_users_insts(n=None):
         writeFile.write(output.getvalue())
 
     print(f"Output written to {filename}")
+
+def get_new_confirmed_users_orcid(start):
+    filename = f'/tmp/new_confirmed_users_orcid.csv'
+    fieldnames = ['u._id', 'u.username', 'u.fullname', 'u.given_name', 'u.middle_names', 'u.family_name', 'u.orcid', 'u.date_confirmed', 'u.is_active', 'u.is_spam', 'u.deleted']
+    output = io.StringIO()
+    writer = csv.DictWriter(output, fieldnames)
+    writer.writeheader()
+
+    start_y, start_m, start_d = map(int, start.split("-"))
+    start = timezone.datetime(start_y, start_m, start_d, tzinfo=pytz.utc)
+
+    qs = OSFUser.objects.filter(date_confirmed__gte=start)
+
+    pbar = tqdm(total=qs.count())
+
+    for udict in qs.values('guids___id', 'username', 'fullname', 'given_name', 'middle_names', 'family_name', 'external_identity', 'date_confirmed', 'is_active', 'spam_status', 'deleted'):
+
+        if 'date_confirmed' in udict and udict['date_confirmed'] is not None:
+            try:
+                udict['u.date_confirmed'] = udict.pop('date_confirmed').date().isoformat()
+            except AttributeError:
+                # if it’s not a datetime, just cast to string
+                udict['u.date_confirmed'] = str(udict.pop('date_confirmed'))
+        else:
+            # remove it from dict entirely if it exists
+            udict.pop('date_confirmed', None)
+            udict['u.date_confirmed'] = None
+
+        deleted = udict.pop('deleted', None)
+
+        if deleted is not None:
+            try:
+                udict['u.deleted'] = deleted.date().isoformat()
+            except AttributeError:
+                udict['u.deleted'] = str(deleted)
+        else:
+            udict['u.deleted'] = None
+
+        udict['u._id'] = udict.pop('guids___id')
+        udict['u.username'] = udict.pop('username')
+        udict['u.fullname'] = udict.pop('fullname')
+        udict['u.given_name'] = udict.pop('given_name')
+        udict['u.middle_names'] = udict.pop('middle_names')
+        udict['u.family_name'] = udict.pop('family_name')
+        udict['u.is_active'] = udict.pop('is_active')
+        udict['u.is_spam'] = udict.pop('spam_status', None) in (1, 2)
+        ext_id = udict.pop('external_identity', {})
+        if 'ORCID' in ext_id and ext_id['ORCID']:
+            udict['u.orcid'] = list(ext_id['ORCID'].keys())[0]  # take the first ORCID
+        else:
+            udict['u.orcid'] = None
+        
+        writer.writerow(udict)
+        pbar.update()
+    pbar.close()
+    with open(filename, 'w') as writeFile:
+        writeFile.write(output.getvalue())
