@@ -2,27 +2,49 @@ def get_new_confirmed_users(start):
     import io
     import csv
     from tqdm import tqdm
-    from django.db.models import OuterRef, Subquery, F, Func, Max
+    from django.db.models import OuterRef, Subquery, F, Func
     from osf.models import OSFUser, Node, Registration, Preprint, NodeLog, PreprintLog
 
-    filename = f'/tmp/new_confirmed_users.csv'
-    fieldnames = ['u._id', 'u.username', 'u.date_confirmed', 'u.date_last_login', 'u.date_last_action',
-                  'u.academiaInstitution', 'u.academiaProfileID', 'u.baiduScholar', 'u.github', 'u.impactStory', 'u.linkedIn', 'u.profileWebsites', 'u.researchGate', 'u.researcherId', 'u.scholar', 'u.ssrn', 'u.twitter', 
-                  'public_projects_created', 'private_projects_created', 
-                  'public_registrations_created', 'withdrawn_registrations_created', 'embargoed_registrations_created', 
-                  'published_preprints_created', 'withdrawn_preprints_created', 
-                  'public_projects_contributor', 'private_projects_contributor', 
-                  'public_registrations_contributor', 'withdrawn_registrations_contributor', 'embargoed_registrations_contributor', 
-                  'published_preprints_contributor', 'withdrawn_preprints_contributor']
+    filename = '/tmp/new_confirmed_users.csv'
+
+    account_fields = [
+        'fullname', 'given_name', 'middle_names', 'family_name',
+        'orcid', 'is_active', 'is_spam', 'deleted'
+    ]
+
+    social_fields = [
+        'academiaInstitution', 'academiaProfileID', 'baiduScholar',
+        'github', 'impactStory', 'linkedIn', 'profileWebsites',
+        'researchGate', 'researcherId', 'scholar', 'ssrn', 'twitter'
+    ]
+
+    activity_fields = [
+        'public_projects_created', 'private_projects_created',
+        'public_registrations_created', 'withdrawn_registrations_created', 'embargoed_registrations_created',
+        'published_preprints_created', 'withdrawn_preprints_created',
+        'public_projects_contributor', 'private_projects_contributor',
+        'public_registrations_contributor', 'withdrawn_registrations_contributor', 'embargoed_registrations_contributor',
+        'published_preprints_contributor', 'withdrawn_preprints_contributor'
+    ]
+
+    fieldnames = (
+        ['u._id', 'u.username', 'u.date_confirmed', 'u.date_last_login',
+         'u.date_last_action']
+        + [f'u.{field}' for field in social_fields]
+        + account_fields
+        + [f'u.{field}' for field in account_fields]
+    )
 
     output = io.StringIO()
     writer = csv.DictWriter(output, fieldnames)
     writer.writeheader()
 
-    start_y, start_m, start_d = map(int, start.split("-"))
+    start_y, start_m, start_d = map(int, start.split('-'))
     start = timezone.datetime(start_y, start_m, start_d, tzinfo=pytz.utc)
 
-    # subqueries for most recent user actions
+    def format_date(value):
+        return value.date().isoformat() if value else None
+
     node_last_subq = (
         NodeLog.objects
         .filter(user_id=OuterRef('pk'))
@@ -37,41 +59,37 @@ def get_new_confirmed_users(start):
         .values('created')[:1]
     )
 
-    # subqueries for project/registration/preprint counts based on creators and contributors
     def count_subq(qs):
-        return qs.annotate(count=Func(F('id'), function='Count')).values('count')
+        return qs.annotate(
+            count=Func(F('id'), function='Count')
+        ).values('count')
 
-    pubn_subq_created = count_subq(Node.objects.filter(creator_id=OuterRef('pk'), is_public=True, deleted__isnull=True))
-    privn_subq_created = count_subq(Node.objects.filter(creator_id=OuterRef('pk'), is_public=False, deleted__isnull=True))
-    pubr_subq_created = count_subq(Registration.objects.filter(creator_id=OuterRef('pk'), is_public=True, deleted__isnull=True).exclude(retraction__state='approved'))
-    withr_subq_created = count_subq(Registration.objects.filter(creator_id=OuterRef('pk'), is_public=True, deleted__isnull=True, retraction__state='approved'))
-    embr_subq_created = count_subq(Registration.objects.filter(creator_id=OuterRef('pk'), is_public=False, deleted__isnull=True, embargo__state='approved'))
-    pubp_subq_created = count_subq(Preprint.objects.filter(creator_id=OuterRef('pk'), is_public=True, is_published=True, deleted__isnull=True).exclude(machine_state='withdrawn'))
-    withp_subq_created = count_subq(Preprint.objects.filter(creator_id=OuterRef('pk'), is_public=True, is_published=True, deleted__isnull=True, machine_state='withdrawn'))
-    pubn_subq_contributor = count_subq(Node.objects.filter(_contributors=OuterRef('pk'), is_public=True, deleted__isnull=True))
-    privn_subq_contributor = count_subq(Node.objects.filter(_contributors=OuterRef('pk'), is_public=False, deleted__isnull=True))
-    pubr_subq_contributor = count_subq(Registration.objects.filter(_contributors=OuterRef('pk'), is_public=True, deleted__isnull=True).exclude(retraction__state='approved'))
-    withr_subq_contributor = count_subq(Registration.objects.filter(_contributors=OuterRef('pk'), is_public=True, deleted__isnull=True, retraction__state='approved'))
-    embr_subq_contributor = count_subq(Registration.objects.filter(_contributors=OuterRef('pk'), is_public=False, deleted__isnull=True, embargo__state='approved'))
-    pubp_subq_contributor = count_subq(Preprint.objects.filter(_contributors=OuterRef('pk'), is_public=True, is_published=True, deleted__isnull=True).exclude(machine_state='withdrawn'))
-    withp_subq_contributor = count_subq(Preprint.objects.filter(_contributors=OuterRef('pk'), is_public=True, is_published=True, deleted__isnull=True, machine_state='withdrawn'))
+    count_subqueries = {
+        'pubn_subq_created': count_subq(Node.objects.filter(creator_id=OuterRef('pk'), is_public=True, deleted__isnull=True)), 
+        'privn_subq_created': count_subq(Node.objects.filter(creator_id=OuterRef('pk'), is_public=False, deleted__isnull=True)),
+        'pubr_subq_created': count_subq(Registration.objects.filter(creator_id=OuterRef('pk'), is_public=True, deleted__isnull=True).exclude(retraction__state='approved')),
+        'withr_subq_created': count_subq(Registration.objects.filter(creator_id=OuterRef('pk'), is_public=True, deleted__isnull=True, retraction__state='approved')), 
+        'embr_subq_created': count_subq(Registration.objects.filter(creator_id=OuterRef('pk'), is_public=False, deleted__isnull=True, embargo__state='approved')), 
+        'pubp_subq_created': count_subq(Preprint.objects.filter(creator_id=OuterRef('pk'), is_public=True, is_published=True, deleted__isnull=True).exclude(machine_state='withdrawn')), 
+        'withp_subq_created': count_subq(Preprint.objects.filter(creator_id=OuterRef('pk'), is_public=True, is_published=True, deleted__isnull=True, machine_state='withdrawn')), 
+        'pubn_subq_contributor': count_subq(Node.objects.filter(_contributors=OuterRef('pk'), is_public=True, deleted__isnull=True)), 
+        'privn_subq_contributor': count_subq(Node.objects.filter(_contributors=OuterRef('pk'), is_public=False, deleted__isnull=True)), 
+        'pubr_subq_contributor': count_subq(Registration.objects.filter(_contributors=OuterRef('pk'), is_public=True, deleted__isnull=True).exclude(retraction__state='approved')), 
+        'withr_subq_contributor': count_subq(Registration.objects.filter(_contributors=OuterRef('pk'), is_public=True, deleted__isnull=True, retraction__state='approved')), 
+        'embr_subq_contributor': count_subq(Registration.objects.filter(_contributors=OuterRef('pk'), is_public=False, deleted__isnull=True, embargo__state='approved')), 
+        'pubp_subq_contributor': count_subq(Preprint.objects.filter(_contributors=OuterRef('pk'), is_public=True, is_published=True, deleted__isnull=True).exclude(machine_state='withdrawn')),
+        'withp_subq_contributor': count_subq(Preprint.objects.filter(_contributors=OuterRef('pk'), is_public=True, is_published=True, deleted__isnull=True, machine_state='withdrawn'))
+    }
 
-    # main queryset
-    qs = OSFUser.objects.filter(date_confirmed__gte=start).annotate(
-        public_projects_created=Subquery(pubn_subq_created),
-        private_projects_created=Subquery(privn_subq_created),
-        public_registrations_created=Subquery(pubr_subq_created),
-        withdrawn_registrations_created=Subquery(withr_subq_created),
-        embargoed_registrations_created=Subquery(embr_subq_created),
-        published_preprints_created=Subquery(pubp_subq_created),
-        withdrawn_preprints_created=Subquery(withp_subq_created),
-        public_projects_contributor=Subquery(pubn_subq_contributor),
-        private_projects_contributor=Subquery(privn_subq_contributor),
-        public_registrations_contributor=Subquery(pubr_subq_contributor),
-        withdrawn_registrations_contributor=Subquery(withr_subq_contributor),
-        embargoed_registrations_contributor=Subquery(embr_subq_contributor),
-        published_preprints_contributor=Subquery(pubp_subq_contributor),
-        withdrawn_preprints_contributor=Subquery(withp_subq_contributor),
+    annotations = {
+        field: Subquery(subquery)
+        for field, subquery in count_subqueries.items()
+    }
+
+    qs = OSFUser.objects.filter(
+        date_confirmed__gte=start
+    ).annotate(
+        **annotations,
         node_last_action=Subquery(node_last_subq),
         preprint_last_action=Subquery(preprint_last_subq)
     )
@@ -79,18 +97,13 @@ def get_new_confirmed_users(start):
     total = qs.count()
     pbar = tqdm(total=total)
 
-    # streaming write (no per-row DB hits)
-    for u in qs.values(
-        'id', 'guids___id', 'username', 'date_confirmed', 'date_last_login',
-        'node_last_action', 'preprint_last_action',
-        'public_projects_created', 'private_projects_created',
-        'public_registrations_created', 'withdrawn_registrations_created', 'embargoed_registrations_created',
-        'published_preprints_created', 'withdrawn_preprints_created',
-        'public_projects_contributor', 'private_projects_contributor',
-        'public_registrations_contributor', 'withdrawn_registrations_contributor', 'embargoed_registrations_contributor',
-        'published_preprints_contributor', 'withdrawn_preprints_contributor',
-        'social'
-    ).iterator(chunk_size=1000):
+    values_fields = [
+        'id', 'guids___id', 'username', 'date_confirmed', 'date_last_login', 'node_last_action', 'preprint_last_action',
+        'social', 'fullname', 'given_name', 'middle_names', 'family_name', 'external_identity',
+        'is_active', 'spam_status', 'deleted'
+    ] + activity_fields
+
+    for u in qs.values(*values_fields).iterator(chunk_size=1000):
 
         last_action = max(
             filter(None, [
@@ -100,27 +113,46 @@ def get_new_confirmed_users(start):
             default=None
         )
 
+        # social profiles
         social = u.get('social') or {}
 
+        # ORCID
+        ext_id = u.get('external_identity') or {}
+        orcid_data = ext_id.get('ORCID') or {}
+        orcid = next(iter(orcid_data), None)
+
+        # account information
         row = {
             'u._id': u['guids___id'],
             'u.username': u['username'],
-            'u.date_confirmed': u['date_confirmed'].date().isoformat() if u['date_confirmed'] else None,
-            'u.date_last_login': u['date_last_login'].date().isoformat() if u['date_last_login'] else None,
-            'u.date_last_action': last_action.date().isoformat() if last_action else None,
-            'u.academiaInstitution': social.get('academiaInstitution', ''),
-            'u.academiaProfileID': social.get('academiaProfileID', ''),
-            'u.baiduScholar': social.get('baiduScholar', ''),
-            'u.github': social.get('github', []),
-            'u.impactStory': social.get('impactStory', ''),
-            'u.linkedIn': social.get('linkedIn', []),
-            'u.profileWebsites': social.get('profileWebsites', []),
-            'u.researchGate': social.get('researchGate', ''),
-            'u.researcherId': social.get('researcherId', ''),
-            'u.scholar': social.get('scholar', ''),
-            'u.ssrn': social.get('ssrn', ''),
-            'u.twitter': social.get('twitter', []),
-            **{k: u.get(k) for k in fieldnames if k in u},
+            'u.date_confirmed': format_date(u['date_confirmed']),
+            'u.date_last_login': format_date(u['date_last_login']),
+            'u.date_last_action': format_date(last_action),
+
+            # social profiles
+            **{
+                f'u.{field}': social.get(
+                    field,
+                    [] if field in ('github', 'linkedIn', 'profileWebsites', 'twitter') else ''
+                )
+                for field in social_fields
+            },
+
+            # activity counts
+            **{
+                field: u.get(field)
+                for field in count_fields
+            },
+
+            # account information
+            'u.fullname': u['fullname'],
+            'u.given_name': u['given_name'],
+            'u.middle_names': u['middle_names'],
+            'u.family_name': u['family_name'],
+            'u.orcid': orcid,
+            'u.is_active': u['is_active'],
+            'u.is_spam': u['spam_status'] in (1, 2),
+            'u.deleted': format_date(u['deleted'])
         }
 
         writer.writerow(row)
@@ -180,60 +212,3 @@ def write_nps_users_insts(n=None):
         writeFile.write(output.getvalue())
 
     print(f"Output written to {filename}")
-
-def get_new_confirmed_users_orcid(start):
-    filename = f'/tmp/new_confirmed_users_orcid.csv'
-    fieldnames = ['u._id', 'u.username', 'u.fullname', 'u.given_name', 'u.middle_names', 'u.family_name', 'u.orcid', 'u.date_confirmed', 'u.is_active', 'u.is_spam', 'u.deleted']
-    output = io.StringIO()
-    writer = csv.DictWriter(output, fieldnames)
-    writer.writeheader()
-
-    start_y, start_m, start_d = map(int, start.split("-"))
-    start = timezone.datetime(start_y, start_m, start_d, tzinfo=pytz.utc)
-
-    qs = OSFUser.objects.filter(date_confirmed__gte=start)
-
-    pbar = tqdm(total=qs.count())
-
-    for udict in qs.values('guids___id', 'username', 'fullname', 'given_name', 'middle_names', 'family_name', 'external_identity', 'date_confirmed', 'is_active', 'spam_status', 'deleted'):
-
-        if 'date_confirmed' in udict and udict['date_confirmed'] is not None:
-            try:
-                udict['u.date_confirmed'] = udict.pop('date_confirmed').date().isoformat()
-            except AttributeError:
-                # if it’s not a datetime, just cast to string
-                udict['u.date_confirmed'] = str(udict.pop('date_confirmed'))
-        else:
-            # remove it from dict entirely if it exists
-            udict.pop('date_confirmed', None)
-            udict['u.date_confirmed'] = None
-
-        deleted = udict.pop('deleted', None)
-
-        if deleted is not None:
-            try:
-                udict['u.deleted'] = deleted.date().isoformat()
-            except AttributeError:
-                udict['u.deleted'] = str(deleted)
-        else:
-            udict['u.deleted'] = None
-
-        udict['u._id'] = udict.pop('guids___id')
-        udict['u.username'] = udict.pop('username')
-        udict['u.fullname'] = udict.pop('fullname')
-        udict['u.given_name'] = udict.pop('given_name')
-        udict['u.middle_names'] = udict.pop('middle_names')
-        udict['u.family_name'] = udict.pop('family_name')
-        udict['u.is_active'] = udict.pop('is_active')
-        udict['u.is_spam'] = udict.pop('spam_status', None) in (1, 2)
-        ext_id = udict.pop('external_identity', {})
-        if 'ORCID' in ext_id and ext_id['ORCID']:
-            udict['u.orcid'] = list(ext_id['ORCID'].keys())[0]  # take the first ORCID
-        else:
-            udict['u.orcid'] = None
-        
-        writer.writerow(udict)
-        pbar.update()
-    pbar.close()
-    with open(filename, 'w') as writeFile:
-        writeFile.write(output.getvalue())
