@@ -215,11 +215,36 @@ def export_nodes(
                     },
                 }
 
+                license_obj = node.license.node_license if node.license else None
+                license_id = getattr(license_obj, '_id', str(license_obj.pk)) if license_obj else None
+                if license_id:
+                    relationships['license'] = {
+                        'links': {'related': {'href': f'{api_base}/licenses/{license_id}/', 'meta': {}}},
+                        'data': {'id': license_id, 'type': 'licenses'},
+                    }
+
+                embeds = {}
+                if license_obj:
+                    embeds['license'] = {
+                        'data': {
+                            'id': license_id,
+                            'type': 'licenses',
+                            'attributes': {
+                                'name': license_obj.name,
+                                'text': license_obj.text,
+                                'url': license_obj.url,
+                                'required_fields': [],
+                            },
+                            'links': {'self': f'{api_base}/licenses/{license_id}/'},
+                        }
+                    }
+
                 result = {
                     'id': nid,
                     'type': 'nodes',
                     'attributes': attributes,
                     'relationships': relationships,
+                    'embeds': embeds,
                     'links': {
                         'self': f'{api_base}/nodes/{nid}/',
                         'html': f'{web_base}/{nid}/',
