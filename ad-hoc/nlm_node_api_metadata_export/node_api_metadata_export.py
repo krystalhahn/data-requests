@@ -41,156 +41,191 @@ def export_nodes(
                 break
 
             for node in nodes:
-                result = {
-                    'id': node._id,
-                    'type': 'nodes',
-                    'attributes': {
+
+                nid = node._id
+
+                # serialize datetimes
+                created = node.created.isoformat().replace('+00:00', '') if node.created else None
+                modified = node.last_logged.isoformat().replace('+00:00', '') if node.last_logged else None
+
+                # build subject taxonomy for subjects selected
+                node_subject_rows = list(node.subjects.all())
+                subject_parent_ids = {
+                    row.parent_id for row in node_subject_rows
+                    if row.parent_id is not None
+                }
+                node_subjects = []
+                for subject in node_subject_rows:
+                    if subject.pk in subject_parent_ids:
+                        continue
+                    subject_path = []
+                    current = subject_lookup.get(subject.pk)
+                    while current:
+                        subject_path.append({
+                            'id': current['id'],
+                            'text': current['text'],
+                        })
+                        current = subject_lookup.get(current['parent_id'])
+                    node_subjects.append(list(reversed(subject_path)))
+
+                attributes = {
                         'title': node.title,
                         'description': node.description,
                         'category': node.category,
                         'custom_citation': getattr(node, 'custom_citation', None),
-                        'date_created': (
-                            node.created.isoformat().replace('+00:00', '')
-                            if node.created else None
-                        ),
-                        'date_modified': (
-                            node.last_logged.isoformat().replace('+00:00', '')
-                            if node.last_logged else None
-                        ),
+                        'date_created': created,
+                        'date_modified': modified,
                         'registration': node.is_registration,
-                        'preprint': False,
+                        'preprint': node.pk in preprint_node_ids,
                         'fork': node.is_fork,
                         'collection': node.is_collection,
                         'tags': list(node.tags.values_list('name', flat=True)),
+                        'access_requests_enabled': getattr(node, 'access_requests_enabled', True),
+                        'node_license': None,
+                        'analytics_key': getattr(node, 'analytics_key', '') or '',
+                        'current_user_can_comment': False,
+                        'current_user_permissions': ['read'],
+                        'current_user_is_contributor': False,
+                        'current_user_is_contributor_or_group_member': False,
+                        'wiki_enabled': False,
                         'public': node.is_public,
-                        'subjects': [
-                            [{'id': subject._id, 'text': subject.text}]
-                            for subject in node.subjects.all()
-                        ],
+                        'subjects': node_subjects,
+                    }
+
+                relationships = {
+                    'children': {
+                        'links': {
+                            'related': {
+                                'href': f'{api_base}/nodes/{nid}/children/',
+                                'meta': {}
+                            }
+                        }
                     },
-                    'relationships': {
-                        'children': {
-                            'links': {
-                                'related': {
-                                    'href': f'{api_base}/nodes/{nid}/children/',
-                                    'meta': {}
-                                }
+                    'comments': {
+                        'links': {
+                            'related': {
+                                'href': f'{api_base}/nodes/{nid}/comments/?filter%5Btarget%5D={nid}',
+                                'meta': {}
+                            }
+                        }
+                    },
+                    'contributors': {
+                        'links': {
+                            'related': {
+                                'href': f'{api_base}/nodes/{nid}/contributors/',
+                                'meta': {}
+                            }
+                        }
+                    },
+                    'bibliographic_contributors': {
+                        'links': {
+                            'related': {
+                                'href': f'{api_base}/nodes/{nid}/bibliographic_contributors/',
+                                'meta': {}
+                            }
+                        }
+                    },
+                    'files': {
+                        'links': {
+                            'related': {
+                                'href': f'{api_base}/nodes/{nid}/files/',
+                                'meta': {}
+                            }
+                        }
+                    },
+                    'settings': {
+                        'links': {
+                            'related': {
+                                'href': f'{api_base}/nodes/{nid}/settings/',
+                                'meta': {}
                             }
                         },
-                        'comments': {
-                            'links': {
-                                'related': {
-                                    'href': f'{api_base}/nodes/{nid}/comments/?filter%5Btarget%5D={nid}',
-                                    'meta': {}
-                                }
+                        'data': {
+                            'id': nid,
+                            'type': 'node-setting'
+                        }
+                    },
+                    'registrations': {
+                        'links': {
+                            'related': {
+                                'href': f'{api_base}/nodes/{nid}/registrations/',
+                                'meta': {}
+                            }
+                        }
+                    },
+                    'identifiers': {
+                        'links': {
+                            'related': {
+                                'href': f'{api_base}/nodes/{nid}/identifiers/',
+                                'meta': {}
+                            }
+                        }
+                    },
+                    'affiliated_institutions': {
+                        'links': {
+                            'related': {
+                                'href': f'{api_base}/nodes/{nid}/institutions/',
+                                'meta': {}
+                            }
+                        }
+                    },
+                    'region': {
+                        'links': {
+                            'related': {
+                                'href': f'{api_base}/nodes/{nid}/region/',
+                                'meta': {}
+                            }
+                        }
+                    },
+                    'root': {
+                        'links': {
+                            'related': {
+                                'href': f'{api_base}/nodes/{node.root._id}/',
+                                'meta': {}
                             }
                         },
-                        'contributors': {
-                            'links': {
-                                'related': {
-                                    'href': f'{api_base}/nodes/{nid}/contributors/',
-                                    'meta': {}
-                                }
+                        'data': {
+                            'id': node.root._id,
+                            'type': 'nodes'
+                        }
+                    },
+                    'citation': {
+                        'links': {
+                            'related': {
+                                'href': f'{api_base}/nodes/{nid}/citation/',
+                                'meta': {}
                             }
                         },
-                        'bibliographic_contributors': {
-                            'links': {
-                                'related': {
-                                    'href': f'{api_base}/nodes/{nid}/bibliographic_contributors/',
-                                    'meta': {}
-                                }
+                        'data': {
+                            'id': nid,
+                            'type': 'citation'
+                        }
+                    },
+                    'storage': {
+                        'links': {
+                            'related': {
+                                'href': f'{api_base}/nodes/{nid}/storage/',
+                                'meta': {}
                             }
                         },
-                        'files': {
-                            'links': {
-                                'related': {
-                                    'href': f'{api_base}/nodes/{nid}/files/',
-                                    'meta': {}
-                                }
-                            }
-                        },
-                        'settings': {
-                            'links': {
-                                'related': {
-                                    'href': f'{api_base}/nodes/{nid}/settings/',
-                                    'meta': {}
-                                }
-                            },
-                            'data': {
-                                'id': nid,
-                                'type': 'node-setting'
-                            }
-                        },
-                        'registrations': {
-                            'links': {
-                                'related': {
-                                    'href': f'{api_base}/nodes/{nid}/registrations/',
-                                    'meta': {}
-                                }
-                            }
-                        },
-                        'identifiers': {
-                            'links': {
-                                'related': {
-                                    'href': f'{api_base}/nodes/{nid}/identifiers/',
-                                    'meta': {}
-                                }
-                            }
-                        },
-                        'affiliated_institutions': {
-                            'links': {
-                                'related': {
-                                    'href': f'{api_base}/nodes/{nid}/institutions/',
-                                    'meta': {}
-                                }
-                            }
-                        },
-                        'region': {
-                            'links': {
-                                'related': {
-                                    'href': f'{api_base}/nodes/{nid}/region/',
-                                    'meta': {}
-                                }
-                            }
-                        },
-                        'root': {
-                            'links': {
-                                'related': {
-                                    'href': f'{api_base}/nodes/{node.root._id}/',
-                                    'meta': {}
-                                }
-                            },
-                            'data': {
-                                'id': node.root._id,
-                                'type': 'nodes'
-                            }
-                        },
-                        'citation': {
-                            'links': {
-                                'related': {
-                                    'href': f'{api_base}/nodes/{nid}/citation/',
-                                    'meta': {}
-                                }
-                            },
-                            'data': {
-                                'id': nid,
-                                'type': 'citation'
-                            }
-                        },
-                        'storage': {
-                            'links': {
-                                'related': {
-                                    'href': f'{api_base}/nodes/{nid}/storage/',
-                                    'meta': {}
-                                }
-                            },
-                            'data': {
-                                'id': nid,
-                                'type': 'node-storage'
-                            }
-                        },
+                        'data': {
+                            'id': nid,
+                            'type': 'node-storage'
+                        }
                     },
                 }
+
+                result = {
+                    'id': nid,
+                    'type': 'nodes',
+                    'attributes': attributes,
+                    'relationships': relationships,
+                    'links': {
+                        'self': f'{api_base}/nodes/{nid}/',
+                        'html': f'{web_base}/{nid}/',
+                    },
+                }
+
 
                 if not first_record:
                     outfile.write(',\n')
