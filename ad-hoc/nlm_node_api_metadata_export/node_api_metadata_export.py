@@ -241,7 +241,7 @@ def export_nodes(
                     }
 
                 institution_data = []
-                
+
                 for institution in node.affiliated_institutions.all():
                     institution_url = f'{web_base}/institutions/{institution._id}/'
                     institution_assets = {}
@@ -300,6 +300,106 @@ def export_nodes(
                 embeds['affiliated_institutions'] = {
                     'data': institution_data,
                     '_count': len(institution_data),
+                    '_complete': True,
+                }
+
+                contributor_data = []
+                    
+                contributor_rows = list(
+                    Contributor.objects.filter(node_id=node.pk)
+                    .select_related('user', 'node')
+                    .order_by('_order')
+                )
+                for contributor in contributor_rows:
+                    user = contributor.user
+                    user_id = getattr(user, '_id', str(user.pk))
+                    user_url = f'{api_base}/users/{user_id}/'
+
+                    registered = user.date_registered
+                    registered = registered.isoformat().replace('+00:00', '') if registered else None
+                    user_resource = {
+                        'id': user_id,
+                        'type': 'users',
+                        'attributes': {
+                            'full_name': user.display_full_name(node),
+                            'given_name': user.given_name,
+                            'middle_names': user.middle_names,
+                            'family_name': user.family_name,
+                            'suffix': user.suffix,
+                            'date_registered': registered,
+                            'active': user.is_active,
+                            'timezone': user.timezone,
+                            'locale': user.locale,
+                            'social': user.social,
+                            'employment': list(user.jobs or []),
+                            'education': list(user.schools or []),
+                            'external_identity': {
+                                provider: {
+                                    'id': identity_id,
+                                    'status': status,
+                                }
+                                for provider, identities in (user.external_identity or {}).items()
+                                for identity_id, status in identities.items()
+                            },
+                        },
+                        'relationships': {
+                            'nodes': {'links': {'related': {
+                                'href': f'{api_base}/users/{user_id}/nodes/', 'meta': {}
+                            }}},
+                            'registrations': {'links': {'related': {
+                                'href': f'{api_base}/users/{user_id}/registrations/', 'meta': {}
+                            }}},
+                            'institutions': {
+                                'links': {
+                                    'related': {'href': f'{api_base}/users/{user_id}/institutions/', 'meta': {}},
+                                    'self': {'href': f'{api_base}/users/{user_id}/relationships/institutions/', 'meta': {}},
+                                }
+                            },
+                            'preprints': {'links': {'related': {
+                                'href': f'{api_base}/users/{user_id}/preprints/', 'meta': {}
+                            }}},
+                            'draft_preprints': {'links': {'related': {
+                                'href': f'{api_base}/users/{user_id}/draft_preprints/', 'meta': {}
+                            }}},
+                        },
+                        'links': {
+                            'html': f'{web_base}/{user_id}/',
+                            'profile_image': user.profile_image_url(),
+                            'self': user_url,
+                            'iri': f'{web_base}/{user_id}',
+                        },
+                    }
+
+                    contributor_data.append({
+                        'id': f'{nid}-{user_id}',
+                        'type': 'contributors',
+                        'attributes': {
+                            'index': contributor._order,
+                            'bibliographic': contributor.visible,
+                            'permission': contributor.permission,
+                            'unregistered_contributor':
+                                user.unclaimed_records.get(nid, {}).get('name'),
+                            'is_curator': contributor.is_curator,
+                        },
+                        'relationships': {
+                            'users': {
+                                'links': {'related': {'href': user_url, 'meta': {}}},
+                                'data': {'id': user_id, 'type': 'users'},
+                            },
+                            'node': {
+                                'links': {'related': {
+                                    'href': f'{api_base}/nodes/{nid}/', 'meta': {}
+                                }},
+                                'data': {'id': nid, 'type': 'nodes'},
+                            },
+                        },
+                        'embeds': {'users': {'data': user_resource}},
+                        'links': {'self': f'{api_base}/nodes/{nid}/contributors/{user_id}/'},
+                    })
+
+                embeds['contributors'] = {
+                    'data': contributor_data,
+                    '_count': len(contributor_data),
                     '_complete': True,
                 }
 
