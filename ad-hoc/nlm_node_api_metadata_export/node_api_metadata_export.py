@@ -11,6 +11,7 @@ def export_nodes(
     from tqdm import tqdm
 
     api_base = 'https://api.osf.io/v2'
+    web_base = 'https://osf.io'
 
     qs = Node.objects.filter(
         is_public=True,
@@ -238,6 +239,69 @@ def export_nodes(
                             'links': {'self': f'{api_base}/licenses/{license_id}/'},
                         }
                     }
+
+                institution_data = []
+                
+                for institution in node.affiliated_institutions.all():
+                    institution_url = f'{web_base}/institutions/{institution._id}/'
+                    institution_assets = {}
+                    for asset in institution.asset_files.all():
+                        asset_name = asset.name
+                        if asset_name == 'logo_rounded_corners':
+                            asset_name = 'logo_rounded'
+                        asset_url = asset.file.url
+                        if asset_url.startswith('http://localhost:5000'):
+                            asset_url = (
+                                'https://storage.googleapis.com/'
+                                f'cos-osf-prod-cdn-us/{asset.file.name}'
+                            )
+                        institution_assets[asset_name] = asset_url
+
+                    institution_iris = [
+                        iri.replace('http://localhost:5000', web_base)
+                        for iri in institution.get_semantic_iris()
+                    ]
+                    institution_data.append({
+                        'id': institution._id,
+                        'type': 'institutions',
+                        'attributes': {
+                            'name': institution.name,
+                            'sso_availability': institution.sso_availability,
+                            'description': institution.description,
+                            'iri': institution.identifier_domain,
+                            'ror_iri': institution.ror_uri,
+                            'iris': institution_iris,
+                            'assets': institution_assets,
+                            'institutional_request_access_enabled':
+                                institution.institutional_request_access_enabled,
+                            'logo_path': institution_assets.get('logo'),
+                        },
+                        'relationships': {
+                            'nodes': {'links': {'related': {
+                                'href': f'{api_base}/institutions/{institution._id}/nodes/',
+                                'meta': {},
+                            }}},
+                            'registrations': {'links': {'related': {
+                                'href': f'{api_base}/institutions/{institution._id}/registrations/',
+                                'meta': {},
+                            }}},
+                            'users': {'links': {'related': {
+                                'href': f'{api_base}/institutions/{institution._id}/users/',
+                                'meta': {},
+                            }}},
+                        },
+                        'links': {
+                            'self': f'{api_base}/institutions/{institution._id}/',
+                            'html': institution_url,
+                            'iri': institution.ror_uri,
+                        },
+                    })
+
+                embeds['affiliated_institutions'] = {
+                    'data': institution_data,
+                    '_count': len(institution_data),
+                    '_complete': True,
+                }
 
                 result = {
                     'id': nid,
