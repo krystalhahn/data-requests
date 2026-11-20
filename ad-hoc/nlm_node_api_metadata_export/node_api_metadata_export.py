@@ -456,6 +456,40 @@ def export_nodes(
                 }
                 embeds['region'] = {'data': region_data}
 
+                csl = {
+                    'id': nid,
+                    'title': sanitize.unescape_entities(node.title),
+                    'author': [],
+                    'publisher': 'OSF',
+                    'type': 'webpage',
+                    'URL': node.display_absolute_url,
+                }
+                for visible_contributor in node.visible_contributors:
+                    csl['author'].append(visible_contributor.csl_name(nid))
+
+                doi = node.get_identifier_value('doi')
+                if doi:
+                    csl['DOI'] = doi
+
+                if node.registered_date:
+                    csl['issued'] = datetime_to_csl(node.registered_date)
+                elif node.logs.exists():
+                    csl['issued'] = datetime_to_csl(node.logs.latest().date)
+
+                citation = {
+                    'id': nid,
+                    'type': 'node-citation',
+                    'attributes': {
+                        'title': csl.get('title'),
+                        'author': csl.get('author'),
+                        'publisher': csl.get('publisher'),
+                        'type': csl.get('type'),
+                    },
+                    'links': {
+                        'self': f'{web_base.removeprefix("https://")}/{nid}',
+                    },
+                }
+
                 result = {
                     'id': nid,
                     'type': 'nodes',
@@ -466,6 +500,7 @@ def export_nodes(
                         'self': f'{api_base}/nodes/{nid}/',
                         'html': f'{web_base}/{nid}/',
                     },
+                    'citation': citation
                 }
 
 
