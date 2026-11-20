@@ -490,6 +490,40 @@ def export_nodes(
                     },
                 }
 
+                metadata_record = GuidMetadataRecord.objects.filter(
+                    guid__id=nid
+                ).first()
+                metadata_attributes = {
+                    'language': '',
+                    'resource_type_general': '',
+                    'funders': [],
+                }
+                if metadata_record:
+                    metadata_attributes['language'] = getattr(metadata_record, 'language', None)
+                    metadata_attributes['resource_type_general'] = getattr(
+                        metadata_record, 'resource_type_general', None
+                    )
+                    metadata_attributes['funders'] = getattr(
+                        metadata_record, 'funding_info', []
+                    ) or []
+
+                custom_item_metadata = {
+                    'id': nid,
+                    'type': 'custom-item-metadata-records',
+                    'attributes': metadata_attributes,
+                    'relationships': {
+                        'guid': {
+                            'links': {'related': {
+                                'href': f'{api_base}/guids/{nid}/',
+                                'meta': {},
+                            }},
+                        },
+                    },
+                    'links': {
+                        'self': f'{api_base}/custom_item_metadata_records/{nid}/',
+                    },
+                }
+
                 result = {
                     'id': nid,
                     'type': 'nodes',
@@ -500,7 +534,8 @@ def export_nodes(
                         'self': f'{api_base}/nodes/{nid}/',
                         'html': f'{web_base}/{nid}/',
                     },
-                    'citation': citation
+                    'citation': citation,
+                    'custom_item_metadata': custom_item_metadata
                 }
 
 
