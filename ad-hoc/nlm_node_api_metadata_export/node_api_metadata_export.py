@@ -403,6 +403,38 @@ def export_nodes(
                     '_complete': True,
                 }
 
+                identifier_data = []
+                identifier_manager = getattr(node, 'identifiers', None)
+                if identifier_manager is not None:
+                    for identifier in identifier_manager.all():
+                        identifier_id = getattr(identifier, '_id', str(identifier.pk))
+                        identifier_data.append({
+                            'id': identifier_id,
+                            'type': 'identifiers',
+                            'attributes': {
+                                'category': identifier.category,
+                                'value': identifier.value,
+                            },
+                            'relationships': {
+                                'referent': {
+                                    'links': {'related': {
+                                        'href': f'{api_base}/nodes/{nid}/',
+                                        'meta': {},
+                                    }},
+                                    'data': {'id': nid, 'type': 'nodes'},
+                                },
+                            },
+                            'links': {
+                                'self': f'{api_base}/identifiers/{identifier_id}/',
+                            },
+                        })
+
+                embeds['identifiers'] = {
+                    'data': identifier_data,
+                    '_count': len(identifier_data),
+                    '_complete': True,
+                }
+
                 result = {
                     'id': nid,
                     'type': 'nodes',
