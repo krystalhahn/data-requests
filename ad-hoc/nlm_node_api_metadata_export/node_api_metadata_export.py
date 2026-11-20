@@ -435,6 +435,27 @@ def export_nodes(
                     '_complete': True,
                 }
 
+                storage_settings = getattr(node, 'addons_osfstorage_node_settings', None)
+                region_obj = getattr(storage_settings, 'region', None) if storage_settings else None
+                region_id = region_obj._id if region_obj else None
+                region_data = None
+                if region_obj:
+                    region_data = {
+                        'id': region_id,
+                        'type': 'regions',
+                        'attributes': {'name': region_obj.name},
+                        'links': {'self': f'{api_base}/regions/{region_id}/'},
+                    }
+
+                relationships['region'] = {
+                    'links': {'related': {
+                        'href': f'{api_base}/regions/{region_id}/',
+                        'meta': {},
+                    }},
+                    'data': {'id': region_id, 'type': 'regions'} if region_id else None,
+                }
+                embeds['region'] = {'data': region_data}
+
                 result = {
                     'id': nid,
                     'type': 'nodes',
