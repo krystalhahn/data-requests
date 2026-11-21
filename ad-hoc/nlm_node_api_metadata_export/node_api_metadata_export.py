@@ -234,7 +234,7 @@ def export_nodes(
                                 'name': license_obj.name,
                                 'text': license_obj.text,
                                 'url': license_obj.url,
-                                'required_fields': [],
+                                'required_fields': license.obj.properties,
                             },
                             'links': {'self': f'{api_base}/licenses/{license_id}/'},
                         }
